@@ -60,12 +60,13 @@
   </div>
 
 <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbxr2-JUh8aQnh7zkygYpZwoquVgwYzoA6CgDxhyrbK8ib0-sh7v_Wk7d2N1VB2mwX2g/exec";
   const params = new URLSearchParams(window.location.search);
   const student = params.get('name') || '은영';
+  const DEFAULT_API = "https://script.google.com/macros/s/AKfycbxr2-JUh8aQnh7zkygYpZwoquVgwYzoA6CgDxhyrbK8ib0-sh7v_Wk7d2N1VB2mwX2g/exec";
+  const API_URL = params.get('api') || DEFAULT_API;
 
   let questions = [], currentIdx = 0, finalResults = [];
-  let userAnswersState = []; // ★ 이전 버튼 눌러도 답안 유지되도록 상태 저장
+  let userAnswersState = []; 
   let voices = [], isPlayingAudio = false;
   let safeWords = [], mcqSelectedAnswer = "", UI = {};
   let recognition = null;
@@ -130,7 +131,22 @@
     const body = `<path d="M 10,120 Q 50,75 90,120 Z" fill="${suit}"/><path d="M 35,120 L 50,85 L 65,120 Z" fill="${shirt}"/>`;
     const tie = F ? '' : `<polygon points="46,105 42,120 58,120 54,105" fill="#c0392b"/>`;
     const hairSVG = F ? `<path d="M 20,80 Q 20,10 50,10 Q 80,10 80,80 Q 85,90 75,90 L 75,50 Q 50,20 25,50 L 25,90 Q 15,90 20,80 Z" fill="${hair}"/>` : `<path d="M 23,50 Q 23,10 50,10 Q 77,10 77,50 Q 77,30 50,25 Q 23,30 23,50 Z" fill="${hair}"/><rect x="23" y="45" width="6" height="15" rx="3" fill="${hair}"/><rect x="71" y="45" width="6" height="15" rx="3" fill="${hair}"/>`;
-    const emoMap = { urgent:{bY:2,bAL:25,bAR:-25,eO:1.2,mT:'wavy',sweat:true}, worried:{bY:1,bAL:-15,bAR:15,eO:0.8,mT:'sad'}, resigned:{bY:-2,bAL:-15,bAR:15,eO:0.5,mT:'flat',bags:true}, happy:{bY:-2,bAL:-5,bAR:5,eO:1.0,mT:'bigSmile',blush:true}, understand:{bY:-2,bAL:0,bAR:0,eO:1.0,mT:'smile'}, exhausted:{bY:0,bAL:0,bAR:0,eO:0.3,mT:'flat',bags:true}, proud:{bY:-2,bAL:-5,bAR:5,eO:1.0,mT:'bigSmile'}, focused:{bY:3,bAL:15,bAR:-15,eO:0.8,mT:'firm',glass:true}, curious:{bY:-2,bAL:0,bAR:-20,eO:1.1,mT:'o'}, serious:{bY:2,bAL:5,bAR:-5,eO:0.9,mT:'firm'}, blank:{bY:0,bAL:0,bAR:0,eO:0.8,mT:'dot'} };
+    
+    // ★ curious 표정 수정 (눈썹 높이 들고, 안 화나 보이게)
+    const emoMap = { 
+      urgent:{bY:2,bAL:25,bAR:-25,eO:1.2,mT:'wavy',sweat:true}, 
+      worried:{bY:1,bAL:-15,bAR:15,eO:0.8,mT:'sad'}, 
+      resigned:{bY:-2,bAL:-15,bAR:15,eO:0.5,mT:'flat',bags:true}, 
+      happy:{bY:-2,bAL:-5,bAR:5,eO:1.0,mT:'bigSmile',blush:true}, 
+      understand:{bY:-2,bAL:0,bAR:0,eO:1.0,mT:'smile'}, 
+      exhausted:{bY:0,bAL:0,bAR:0,eO:0.3,mT:'flat',bags:true}, 
+      proud:{bY:-2,bAL:-5,bAR:5,eO:1.0,mT:'bigSmile'}, 
+      focused:{bY:3,bAL:15,bAR:-15,eO:0.8,mT:'firm',glass:true}, 
+      curious:{bY:-5,bAL:0,bAR:0,eO:1.2,mT:'o'}, 
+      serious:{bY:2,bAL:5,bAR:-5,eO:0.9,mT:'firm'}, 
+      blank:{bY:0,bAL:0,bAR:0,eO:0.8,mT:'dot'} 
+    };
+    
     const E = emoMap[emotion] || emoMap.serious;
     const eyeL = `<ellipse cx="38" cy="50" rx="4" ry="${4*E.eO}" fill="#111"/>`; const eyeR = `<ellipse cx="62" cy="50" rx="4" ry="${4*E.eO}" fill="#111"/>`;
     const nose = `<path d="M 50,52 L 50,62 L 53,62" stroke="#d35400" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round" stroke-linejoin="round"/>`;
@@ -157,7 +173,6 @@
 
   function renderCard() {
     const q = questions[currentIdx];
-    // ★ Stage 0으로 나오던 버그 수정 (streak이 아니라 stage값 직접 읽기)
     const stage = q.stage || 1; 
     document.getElementById('title').innerText = "Mission #" + (currentIdx+1) + " (Stage " + stage + ")";
     
@@ -175,12 +190,10 @@
 
     if (q.type === "MCQ") {
       let options = [q.answer, ...q.distractors].filter(Boolean).sort(() => Math.random()-0.5);
-      // ★ 이전 답안 복원 (객관식)
       interactiveArea = '<div id="mcq-area">' + options.map((opt,i) => `<button class="mcq-btn ${userAnswersState[currentIdx] === opt ? 'selected' : ''}" onclick="selectMCQ(this,'${opt.replace(/'/g,"\\'")}')">${opt}</button>`).join('') + '</div>';
       chatHtml += `<div class="chat-bubble">${cleanGappedB.replace(/\[BLANK\]/g,'_______')}</div></div></div>`;
       mcqSelectedAnswer = userAnswersState[currentIdx] || "";
     } else {
-      // ★ 단일 단어가 아니라 AI가 쪼개준 "덩어리(chunk)" 배열 사용
       const chunks = q.chunked_answer || q.answer.split(' ');
       const slotsHtml = '<div class="slot-group">' + Array.from({length:chunks.length},(_,i)=>`<div class="slot" id="slot-${i}" onclick="clearSlot(this)"></div>`).join('') + '</div>';
       chatHtml += `<div class="chat-bubble">${cleanGappedB.replace(/\[BLANK\]/g,slotsHtml)}</div></div></div>`;
@@ -194,7 +207,6 @@
     if (q.type !== "MCQ" && recognition) { document.getElementById('mic-instruction').style.display = 'block'; document.getElementById('mic-btn').style.display = 'flex'; }
     isPlayingAudio = false;
 
-    // ★ 이전 답안 복원 로직 (조립식 빈칸 채우기)
     if (q.type !== "MCQ" && userAnswersState[currentIdx]) {
         const savedWords = userAnswersState[currentIdx];
         const slots = document.querySelectorAll('.slot');
@@ -208,7 +220,6 @@
     }
   }
 
-  // ★ 이전 버튼 클릭 시 상태 잃지 않고 돌아가기
   function goPrev() {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     if (currentIdx > 0) { currentIdx--; renderCard(); }
@@ -217,7 +228,7 @@
   function selectMCQ(btn, opt) {
     document.querySelectorAll('.mcq-btn').forEach(b=>b.classList.remove('selected'));
     btn.classList.add('selected'); mcqSelectedAnswer = opt; 
-    userAnswersState[currentIdx] = opt; // 상태 저장
+    userAnswersState[currentIdx] = opt;
   }
 
   function fillSlot(wordIndex, btnId) {
@@ -239,12 +250,12 @@
     }
   }
 
-  // ★ 슬롯 채울 때마다 상태 저장
   function saveSlotState() {
       const slots = document.querySelectorAll('.slot');
       userAnswersState[currentIdx] = Array.from(slots).map(s => s.innerText.trim());
   }
 
+  // ★ 마이크 인식 검사 로직 강화 (85% 이상 & 정확한 단어 매칭)
   function startSpeaking() {
     if (!recognition) return;
     const micBtn = document.getElementById('mic-btn'); micBtn.classList.add('listening'); micBtn.innerHTML = "🎙️ " + UI.micListen;
@@ -254,8 +265,12 @@
       micBtn.classList.remove('listening'); micBtn.innerHTML = "🎙️ " + UI.micRecog + '"' + spoken + '"';
       const q = questions[currentIdx];
       const targetWords = q.answer.toLowerCase().replace(/[.,!?]/g,'').split(' ');
-      let matchCount = 0; targetWords.forEach(word => { if(spoken.includes(word)) matchCount++; });
-      if ((matchCount/targetWords.length) >= 0.70) { // ★ 85% 너무 빡세서 70%로 완화
+      const spokenWords = spoken.split(' '); // 사용자가 말한 단어도 배열로 쪼개서 검사!
+      
+      let matchCount = 0; 
+      targetWords.forEach(word => { if(spokenWords.includes(word)) matchCount++; }); // "the"를 말했다고 "he"가 통과되는 오류 차단
+      
+      if ((matchCount/targetWords.length) >= 0.85) { 
         fireConfetti();
         const slots = document.querySelectorAll('.slot');
         const chunks = q.chunked_answer || q.answer.split(' ');
@@ -283,7 +298,6 @@
       const slots = document.querySelectorAll('.slot'); let userWords = [];
       slots.forEach(s => userWords.push(s.innerText.trim()));
       userAnswer = userWords.join(' '); 
-      // ★ 대충 맞춰도 일단 넘어가게 허용 (빈칸이 있어도 채점 진행, 틀린 걸로 간주)
       isWin = (userAnswer.toLowerCase().replace(/\s+/g, '') === q.answer.toLowerCase().replace(/\s+/g, ''));
     }
 
@@ -300,7 +314,6 @@
     document.getElementById('mic-instruction').style.display = 'none'; document.getElementById('mic-btn').style.display = 'none';
     finalResults[currentIdx] = { originalIndex: q.originalIndex, question: q.speaker_a.replace(/\*\*/g,'') + " / " + cleanFullB, userAnswer, correctAnswer: q.answer, isCorrect: isWin };
     
-    // ★ 다음 버튼으로 교체
     const btn = document.getElementById('btn'); btn.innerText = UI.nextBtn;
     btn.onclick = () => { if(window.speechSynthesis) window.speechSynthesis.cancel(); currentIdx++; currentIdx < questions.length ? renderCard() : finish(); };
   }
