@@ -308,7 +308,7 @@
       const targetWords = q.answer.toLowerCase().replace(/[.,!?]/g,'').split(' ');
       let matchCount = 0;
       targetWords.forEach(word => { if(spoken.includes(word)) matchCount++; });
-      if ((matchCount/targetWords.length) >= 0.60) {
+      if ((matchCount/targetWords.length) >= 0.80) {
         fireConfetti();
         const slots = document.querySelectorAll('.slot');
         targetWords.forEach((word,i) => { if(slots[i]) { slots[i].innerText = word; slots[i].classList.add('filled'); } });
