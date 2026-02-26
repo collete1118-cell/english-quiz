@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>English Mission</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Poppins', sans-serif; background: #eef2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    .card { background: white; border-radius: 28px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 92%; max-width: 500px; overflow: hidden; margin: 20px 0; display: flex; flex-direction: column; }
+    .banner { width: 100%; height: 60px; background: #2c3e50; display: flex; align-items: center; padding: 0 20px; box-sizing: border-box; }
+    .banner-text { color: white; margin: 0; font-size: 18px; font-weight: 700; }
+    .content { padding: 25px; flex-grow: 1; }
+    .audio-toggle-btn { background: #2ecc71; color: white; border: none; padding: 14px 18px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 25px; width: 100%; box-shadow: 0 4px 6px rgba(46,204,113,0.3); transition: 0.2s; }
+    .audio-toggle-btn.playing { background: #e74c3c; }
+    .scenario-box { background: #fdfdfd; padding: 15px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid #3498db; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .instruction-text { font-size: 13.5px; font-weight: 800; color: #2980b9; margin-bottom: 6px; }
+    .scenario-text { font-size: 13px; color: #34495e; margin: 0; font-weight: 600; line-height: 1.4; }
+    .chat-container { display: flex; flex-direction: column; gap: 20px; margin-bottom: 30px; }
+    .chat-row { display: flex; align-items: flex-start; gap: 15px; }
+    .chat-row.speaker-b { flex-direction: row-reverse; }
+    .chat-avatar-wrapper { display: flex; flex-direction: column; align-items: center; width: 90px; flex-shrink: 0; }
+    .chat-avatar-svg { width: 85px; height: 85px; border-radius: 50%; overflow: hidden; background: #ecf0f1; border: 3px solid #bdc3c7; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+    .female-wrapper { border-color: #3498db; background: #e3f2fd; }
+    .chat-name { font-size: 13px; font-weight: 800; color: #7f8c8d; margin-top: 6px; text-align: center; }
+    .chat-bubble { background: #f1f2f6; padding: 16px; border-radius: 20px; font-size: 15px; line-height: 1.5; color: #2c3e50; max-width: calc(100% - 110px); }
+    .chat-row.speaker-b .chat-bubble { background: #eef2f7; border: 2px solid #3498db; font-weight: 600; }
+    .mic-instruction { text-align: center; color: #e74c3c; font-size: 13.5px; font-weight: 700; margin-top: 15px; display: none; background: #fdedec; padding: 10px; border-radius: 8px; }
+    .mic-btn { background: #ff4757; color: white; margin-top: 10px; width: 100%; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 700; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; transition: 0.2s; }
+    .mic-btn.listening { animation: pulse 1.5s infinite; background: #ff6b81; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+    .slot-group { display: inline-flex; flex-wrap: wrap; gap: 6px; vertical-align: middle; }
+    .slot { padding: 6px 12px; border: 2px dashed #bdc3c7; border-radius: 8px; min-width: 40px; min-height: 24px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #2c3e50; cursor: pointer; background: white; font-size: 15.5px; }
+    .slot.filled { border-style: solid; border-color: #3498db; background: #eef2f7; }
+    .mcq-btn { width: 100%; text-align: left; padding: 16px; background: white; border: 2px solid #eef2f7; border-radius: 12px; font-size: 15px; font-weight: 600; color: #34495e; margin-bottom: 12px; cursor: pointer; transition: 0.2s; }
+    .mcq-btn.selected { background: #3498db; color: white; border-color: #3498db; }
+    .word-bank { display: flex; flex-wrap: wrap; gap: 10px; margin: 25px 0 20px; justify-content: center; }
+    .word-btn { background: #fff; border: 2px solid #3498db; color: #3498db; padding: 10px 18px; border-radius: 15px; font-weight: 700; cursor: pointer; font-size: 15.5px; }
+    .word-btn.used { display: none; }
+    .button-group { display: flex; gap: 10px; margin-top: 15px; }
+    .prev-btn { background: #95a5a6; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; flex: 1; }
+    .submit-btn { background: #3498db; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; flex: 2; }
+    .inline-error { background: #fdedec; color: #e74c3c; padding: 12px; border-radius: 8px; text-align: center; font-weight: 700; font-size: 14px; margin-top: 15px; display: none; border: 1px solid #e74c3c; }
+    .feedback { margin-top: 25px; padding: 20px; border-radius: 12px; font-size: 15px; display: none; line-height: 1.6; }
+    .correct { background: #e8f8f5; color: #1abc9c; border: 1px solid #1abc9c; }
+    .wrong { background: #fdedec; color: #e74c3c; border: 1px solid #e74c3c; }
+    .explanation { margin-top: 12px; font-size: 14.5px; color: #34495e; }
+    .result-item { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .loading-container { text-align: center; margin-top: 20px; padding: 20px; }
+    .loading-number { font-size: 55px; font-weight: 900; color: #3498db; letter-spacing: -2px; }
+    .loading-text { color: #34495e; font-weight: 700; font-size: 15px; margin-top: 10px; background: #ecf0f1; padding: 15px; border-radius: 10px; }
+  </style>
+</head>
+<body>
+  <div id="app" class="card">
+    <div id="banner" class="banner"><h1 id="title" class="banner-text">Preparing Session...</h1></div>
+    <div id="main-content" class="content">
+      <div class="loading-container"><div class="loading-number" id="loading-count">0%</div><p class="loading-text">AI Coach is preparing your mission... 🚀</p></div>
+    </div>
+  </div>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbxr2-JUh8aQnh7zkygYpZwoquVgwYzoA6CgDxhyrbK8ib0-sh7v_Wk7d2N1VB2mwX2g/exec";
+  const params = new URLSearchParams(window.location.search);
+  const student = params.get('name') || '은영';
+
+  let questions = [], currentIdx = 0, finalResults = [];
+  let userAnswersState = []; // ★ 이전 버튼 눌러도 답안 유지되도록 상태 저장
+  let voices = [], isPlayingAudio = false;
+  let safeWords = [], mcqSelectedAnswer = "", UI = {};
+  let recognition = null;
+
+  try {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) { recognition = new SR(); recognition.continuous = false; recognition.interimResults = false; }
+  } catch(e) {}
+
+  function loadVoices() { voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en-')); }
+  if ('speechSynthesis' in window) { loadVoices(); window.speechSynthesis.onvoiceschanged = loadVoices; }
+
+  let loadProgress = 0;
+  const loadInterval = setInterval(() => {
+    if (loadProgress < 95) {
+      loadProgress += loadProgress < 80 ? (Math.floor(Math.random() * 8) + 2) : 1;
+      const el = document.getElementById('loading-count');
+      if (el) el.innerText = loadProgress + "%";
+    }
+  }, 300);
+
+  fetch(API_URL + "?action=getData&name=" + encodeURIComponent(student))
+    .then(r => r.json())
+    .then(data => {
+      clearInterval(loadInterval);
+      if (document.getElementById('loading-count')) document.getElementById('loading-count').innerText = "100%";
+      if (data.error) { document.getElementById('main-content').innerHTML = '<div style="color:red;padding:20px;text-align:center;">Error: ' + data.error + '</div>'; return; }
+      questions = data;
+      const isLow = questions[0].isLow;
+      UI = {
+        sit: isLow ? "💡 상황: " : "💡 Context: ",
+        micInfo: isLow ? "🚨 빈칸 단어만 말해주세요!" : "🚨 Speak ONLY the target words.",
+        micBtn: isLow ? "🎙️ 마이크 켜기" : "🎙️ Speak Answer",
+        playBtn: "▶️ 대화 듣기", stopBtn: "⏹️ 멈춤", checkBtn: "정답 확인", nextBtn: "다음 미션 >",
+        micListen: "듣고 있습니다...", micRecog: "인식됨: ", micTry: "다시 탭하세요.",
+        micFail: "아쉬워요! 인식된 내용: ", ansCorrect: "정답: ", ansNote: "Review Note: "
+      };
+      setTimeout(() => renderCard(), 500);
+    })
+    .catch(err => { clearInterval(loadInterval); document.getElementById('main-content').innerHTML = '<div style="color:red;padding:20px;text-align:center;">네트워크 오류. 새로고침 해주세요.<br>' + err + '</div>'; });
+
+  function fireConfetti() {
+    const emojis = ['🎉','✨','👏','💯','🔥'];
+    for (let i = 0; i < 30; i++) {
+      let c = document.createElement('div');
+      c.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+      c.style.cssText = 'position:fixed;left:' + (Math.random()*100) + 'vw;top:-50px;font-size:' + (Math.random()*20+20) + 'px;z-index:9999;transition:top 2s ease-in,transform 2s ease-out;transform:rotate(' + (Math.random()*360) + 'deg)';
+      document.body.appendChild(c);
+      setTimeout(() => c.style.top = '100vh', 50);
+      setTimeout(() => c.remove(), 2000);
+    }
+  }
+
+  const VALID_EMOTIONS = ['urgent','resigned','understand','exhausted','proud','focused','curious','serious','blank','worried','happy'];
+  const EMO_ALIAS = { neutral:'serious', relieved:'happy', glad:'happy', angry:'urgent', sad:'resigned' };
+  function mapEmotion(raw) { return EMO_ALIAS[String(raw||'').toLowerCase().replace(/[^a-z]/g,'')] || (VALID_EMOTIONS.includes(String(raw||'').toLowerCase().replace(/[^a-z]/g,'')) ? String(raw||'').toLowerCase().replace(/[^a-z]/g,'') : 'serious'); }
+
+  function buildCleanSVG(gender, emotion) {
+    const F = gender === 'female'; emotion = mapEmotion(emotion);
+    const skin = F ? '#ffe0bd' : '#f1c27d', hair = '#2c3e50', suit = '#1a252f', shirt = '#ffffff';
+    const face = `<rect x="25" y="25" width="50" height="60" rx="25" fill="${skin}"/>`; const neck = `<rect x="42" y="75" width="16" height="20" fill="${skin}"/>`;
+    const body = `<path d="M 10,120 Q 50,75 90,120 Z" fill="${suit}"/><path d="M 35,120 L 50,85 L 65,120 Z" fill="${shirt}"/>`;
+    const tie = F ? '' : `<polygon points="46,105 42,120 58,120 54,105" fill="#c0392b"/>`;
+    const hairSVG = F ? `<path d="M 20,80 Q 20,10 50,10 Q 80,10 80,80 Q 85,90 75,90 L 75,50 Q 50,20 25,50 L 25,90 Q 15,90 20,80 Z" fill="${hair}"/>` : `<path d="M 23,50 Q 23,10 50,10 Q 77,10 77,50 Q 77,30 50,25 Q 23,30 23,50 Z" fill="${hair}"/><rect x="23" y="45" width="6" height="15" rx="3" fill="${hair}"/><rect x="71" y="45" width="6" height="15" rx="3" fill="${hair}"/>`;
+    const emoMap = { urgent:{bY:2,bAL:25,bAR:-25,eO:1.2,mT:'wavy',sweat:true}, worried:{bY:1,bAL:-15,bAR:15,eO:0.8,mT:'sad'}, resigned:{bY:-2,bAL:-15,bAR:15,eO:0.5,mT:'flat',bags:true}, happy:{bY:-2,bAL:-5,bAR:5,eO:1.0,mT:'bigSmile',blush:true}, understand:{bY:-2,bAL:0,bAR:0,eO:1.0,mT:'smile'}, exhausted:{bY:0,bAL:0,bAR:0,eO:0.3,mT:'flat',bags:true}, proud:{bY:-2,bAL:-5,bAR:5,eO:1.0,mT:'bigSmile'}, focused:{bY:3,bAL:15,bAR:-15,eO:0.8,mT:'firm',glass:true}, curious:{bY:-2,bAL:0,bAR:-20,eO:1.1,mT:'o'}, serious:{bY:2,bAL:5,bAR:-5,eO:0.9,mT:'firm'}, blank:{bY:0,bAL:0,bAR:0,eO:0.8,mT:'dot'} };
+    const E = emoMap[emotion] || emoMap.serious;
+    const eyeL = `<ellipse cx="38" cy="50" rx="4" ry="${4*E.eO}" fill="#111"/>`; const eyeR = `<ellipse cx="62" cy="50" rx="4" ry="${4*E.eO}" fill="#111"/>`;
+    const nose = `<path d="M 50,52 L 50,62 L 53,62" stroke="#d35400" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const browL = `<line x1="30" y1="${42+E.bY}" x2="45" y2="${42+E.bY}" stroke="#333" stroke-width="3.5" stroke-linecap="round" transform="rotate(${E.bAL},37.5,42)"/>`; const browR = `<line x1="55" y1="${42+E.bY}" x2="70" y2="${42+E.bY}" stroke="#333" stroke-width="3.5" stroke-linecap="round" transform="rotate(${E.bAR},62.5,42)"/>`;
+    let mouth = '';
+    if(E.mT==='flat') mouth=`<line x1="44" y1="70" x2="56" y2="70" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>`; if(E.mT==='dot') mouth=`<line x1="48" y1="70" x2="52" y2="70" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>`; if(E.mT==='firm') mouth=`<line x1="40" y1="70" x2="60" y2="70" stroke="#333" stroke-width="3" stroke-linecap="round"/>`; if(E.mT==='sad') mouth=`<path d="M 45,73 Q 50,65 55,73" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>`; if(E.mT==='smile') mouth=`<path d="M 44,68 Q 50,75 56,68" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>`; if(E.mT==='bigSmile') mouth=`<path d="M 42,68 Q 50,80 58,68 Z" fill="#fff" stroke="#333" stroke-width="2.5"/>`; if(E.mT==='o') mouth=`<circle cx="50" cy="72" r="3.5" fill="#333"/>`; if(E.mT==='wavy') mouth=`<path d="M 42,72 Q 45,68 48,72 Q 52,76 55,72" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    const sweat = E.sweat ? `<g fill="#3498db" opacity="0.8"><ellipse cx="15" cy="40" rx="3" ry="5"/><ellipse cx="10" cy="50" rx="2.5" ry="4"/><ellipse cx="85" cy="40" rx="3" ry="5"/><ellipse cx="90" cy="50" rx="2.5" ry="4"/></g>` : ''; const bags = E.bags ? `<path d="M 32,58 Q 38,62 44,58 M 56,58 Q 62,62 68,58" stroke="#333" stroke-width="1.5" fill="none" opacity="0.4"/>` : ''; const blush = E.blush ? `<ellipse cx="35" cy="58" rx="6" ry="3" fill="#e74c3c" opacity="0.3"/><ellipse cx="65" cy="58" rx="6" ry="3" fill="#e74c3c" opacity="0.3"/>` : ''; const glass = E.glass ? `<rect x="26" y="44" width="22" height="12" rx="3" fill="none" stroke="#2c3e50" stroke-width="2.5"/><rect x="52" y="44" width="22" height="12" rx="3" fill="none" stroke="#2c3e50" stroke-width="2.5"/><line x1="48" y1="50" x2="52" y2="50" stroke="#2c3e50" stroke-width="2.5"/>` : '';
+    return `<svg viewBox="0 0 100 100" width="100%" height="100%">${body}${tie}${neck}${face}${hairSVG}${eyeL}${eyeR}${nose}${mouth}${sweat}${bags}${blush}${glass}${browL}${browR}</svg>`;
+  }
+
+  function toggleAudio(isAnswered) {
+    const synth = window.speechSynthesis; const btn = document.getElementById('audio-btn');
+    if (isPlayingAudio || synth.speaking) { synth.cancel(); btn.innerHTML = UI.playBtn; btn.classList.remove('playing'); isPlayingAudio = false; return; }
+    if (!synth || voices.length === 0) return;
+    btn.innerHTML = UI.stopBtn; btn.classList.add('playing'); isPlayingAudio = true;
+    const voiceA = voices.find(x => x.name.includes('Male')) || voices[0]; const voiceB = voices.find(x => x.name.includes('Female')) || voices[voices.length-1];
+    const q = questions[currentIdx];
+    const textA = q.speaker_a.replace(/^.*?:/g,'').replace(/[*_~\[\]]/g,'').trim();
+    const textB = (isAnswered ? q.full_b : q.gapped_b.replace(/\[BLANK\]/g,'blank')).replace(/^.*?:/g,'').replace(/[*_~\[\]]/g,'').trim();
+    const uA = new SpeechSynthesisUtterance(textA); uA.voice = voiceA; uA.rate = 0.95;
+    const uB = new SpeechSynthesisUtterance(textB); uB.voice = voiceB; uB.rate = 0.95;
+    uB.onend = () => { btn.innerHTML = UI.playBtn; btn.classList.remove('playing'); isPlayingAudio = false; }; uA.onend = () => { if (isPlayingAudio) setTimeout(() => synth.speak(uB), 400); }; synth.speak(uA);
+  }
+
+  function renderCard() {
+    const q = questions[currentIdx];
+    // ★ Stage 0으로 나오던 버그 수정 (streak이 아니라 stage값 직접 읽기)
+    const stage = q.stage || 1; 
+    document.getElementById('title').innerText = "Mission #" + (currentIdx+1) + " (Stage " + stage + ")";
+    
+    const genderB = (q.student_gender && q.student_gender.includes('female')) ? 'female' : 'male';
+    const genderA = genderB === 'female' ? 'male' : 'female';
+    const svgA = buildCleanSVG(genderA, q.emotion_a); const svgB = buildCleanSVG(genderB, q.emotion_b);
+    
+    let chatHtml = `<button id="audio-btn" class="audio-toggle-btn" onclick="toggleAudio(false)">${UI.playBtn}</button>
+      <div class="chat-container">
+        <div class="chat-row"><div class="chat-avatar-wrapper"><div class="chat-avatar-svg ${genderA === 'female' ? 'female-wrapper' : ''}">${svgA}</div><div class="chat-name">${q.coworker_name}</div></div><div class="chat-bubble">${q.speaker_a.replace(/\*\*/g,'')}</div></div>
+        <div class="chat-row speaker-b"><div class="chat-avatar-wrapper"><div class="chat-avatar-svg ${genderB === 'female' ? 'female-wrapper' : ''}">${svgB}</div><div class="chat-name">${q.student_name}</div></div>`;
+    
+    let cleanGappedB = q.gapped_b.replace(/\*\*/g,'').replace(/(\[BLANK\]\s*)+/g,'[BLANK]');
+    let interactiveArea = "";
+
+    if (q.type === "MCQ") {
+      let options = [q.answer, ...q.distractors].filter(Boolean).sort(() => Math.random()-0.5);
+      // ★ 이전 답안 복원 (객관식)
+      interactiveArea = '<div id="mcq-area">' + options.map((opt,i) => `<button class="mcq-btn ${userAnswersState[currentIdx] === opt ? 'selected' : ''}" onclick="selectMCQ(this,'${opt.replace(/'/g,"\\'")}')">${opt}</button>`).join('') + '</div>';
+      chatHtml += `<div class="chat-bubble">${cleanGappedB.replace(/\[BLANK\]/g,'_______')}</div></div></div>`;
+      mcqSelectedAnswer = userAnswersState[currentIdx] || "";
+    } else {
+      // ★ 단일 단어가 아니라 AI가 쪼개준 "덩어리(chunk)" 배열 사용
+      const chunks = q.chunked_answer || q.answer.split(' ');
+      const slotsHtml = '<div class="slot-group">' + Array.from({length:chunks.length},(_,i)=>`<div class="slot" id="slot-${i}" onclick="clearSlot(this)"></div>`).join('') + '</div>';
+      chatHtml += `<div class="chat-bubble">${cleanGappedB.replace(/\[BLANK\]/g,slotsHtml)}</div></div></div>`;
+      safeWords = [...chunks].sort(()=>Math.random()-0.5);
+      interactiveArea = '<div class="word-bank">' + safeWords.map((w,i)=>`<button class="word-btn" id="wb-${i}" onclick="fillSlot(${i},'wb-${i}')">${w}</button>`).join('') + '</div>';
+    }
+
+    const prevBtnHtml = currentIdx > 0 ? `<button class="prev-btn" onclick="goPrev()">이전 미션</button>` : '';
+    document.getElementById('main-content').innerHTML = `<div class="scenario-box"><div class="instruction-text">${q.instruction}</div><div class="scenario-text">${UI.sit}${q.scenario}</div></div>` + chatHtml + interactiveArea + `<div id="inline-error" class="inline-error"></div><div id="mic-instruction" class="mic-instruction">${UI.micInfo}</div><button id="mic-btn" class="mic-btn" onclick="startSpeaking()" style="display:none;">${UI.micBtn}</button><div id="feedback" class="feedback"></div><div class="button-group">${prevBtnHtml}<button id="btn" class="submit-btn" onclick="checkAnswer(${q.type === 'MCQ'})">${UI.checkBtn}</button></div>`;
+    
+    if (q.type !== "MCQ" && recognition) { document.getElementById('mic-instruction').style.display = 'block'; document.getElementById('mic-btn').style.display = 'flex'; }
+    isPlayingAudio = false;
+
+    // ★ 이전 답안 복원 로직 (조립식 빈칸 채우기)
+    if (q.type !== "MCQ" && userAnswersState[currentIdx]) {
+        const savedWords = userAnswersState[currentIdx];
+        const slots = document.querySelectorAll('.slot');
+        savedWords.forEach((word, idx) => {
+            if (word && slots[idx]) {
+                slots[idx].innerText = word; slots[idx].classList.add('filled');
+                const btnIdx = safeWords.indexOf(word);
+                if (btnIdx > -1) document.getElementById('wb-' + btnIdx).classList.add('used');
+            }
+        });
+    }
+  }
+
+  // ★ 이전 버튼 클릭 시 상태 잃지 않고 돌아가기
+  function goPrev() {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if (currentIdx > 0) { currentIdx--; renderCard(); }
+  }
+
+  function selectMCQ(btn, opt) {
+    document.querySelectorAll('.mcq-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected'); mcqSelectedAnswer = opt; 
+    userAnswersState[currentIdx] = opt; // 상태 저장
+  }
+
+  function fillSlot(wordIndex, btnId) {
+    const slots = document.querySelectorAll('.slot');
+    for (let i=0; i<slots.length; i++) {
+      if (slots[i].innerText === "") {
+        slots[i].innerText = safeWords[wordIndex]; slots[i].dataset.btnId = btnId; slots[i].classList.add('filled');
+        document.getElementById(btnId).classList.add('used');
+        saveSlotState(); break;
+      }
+    }
+  }
+
+  function clearSlot(s) {
+    if (s.innerText !== "") {
+      if (s.dataset.btnId) document.getElementById(s.dataset.btnId).classList.remove('used');
+      s.innerText = ""; s.classList.remove('filled');
+      saveSlotState();
+    }
+  }
+
+  // ★ 슬롯 채울 때마다 상태 저장
+  function saveSlotState() {
+      const slots = document.querySelectorAll('.slot');
+      userAnswersState[currentIdx] = Array.from(slots).map(s => s.innerText.trim());
+  }
+
+  function startSpeaking() {
+    if (!recognition) return;
+    const micBtn = document.getElementById('mic-btn'); micBtn.classList.add('listening'); micBtn.innerHTML = "🎙️ " + UI.micListen;
+    recognition.lang = 'en-US'; try { recognition.start(); } catch(e) {}
+    recognition.onresult = function(event) {
+      const spoken = event.results[0][0].transcript.toLowerCase().replace(/[.,!?]/g,'');
+      micBtn.classList.remove('listening'); micBtn.innerHTML = "🎙️ " + UI.micRecog + '"' + spoken + '"';
+      const q = questions[currentIdx];
+      const targetWords = q.answer.toLowerCase().replace(/[.,!?]/g,'').split(' ');
+      let matchCount = 0; targetWords.forEach(word => { if(spoken.includes(word)) matchCount++; });
+      if ((matchCount/targetWords.length) >= 0.70) { // ★ 85% 너무 빡세서 70%로 완화
+        fireConfetti();
+        const slots = document.querySelectorAll('.slot');
+        const chunks = q.chunked_answer || q.answer.split(' ');
+        chunks.forEach((chunk,i) => { if(slots[i]) { slots[i].innerText = chunk; slots[i].classList.add('filled'); } });
+        saveSlotState();
+        setTimeout(() => checkAnswer(false), 800);
+      } else {
+        document.getElementById('inline-error').innerText = "🚨 " + UI.micFail + '"' + spoken + '"';
+        document.getElementById('inline-error').style.display = 'block';
+        micBtn.innerHTML = "🎙️ " + UI.micTry;
+      }
+    };
+    recognition.onerror = function(event) { micBtn.classList.remove('listening'); micBtn.innerHTML = "🎙️ 에러(다시 탭)"; };
+    recognition.onend = function() { micBtn.classList.remove('listening'); };
+  }
+
+  function checkAnswer(isMCQ) {
+    const q = questions[currentIdx];
+    let isWin = false, userAnswer = "";
+    document.getElementById('inline-error').style.display = 'none';
+
+    if (isMCQ) {
+      userAnswer = mcqSelectedAnswer; isWin = (userAnswer.toLowerCase() === q.answer.toLowerCase());
+    } else {
+      const slots = document.querySelectorAll('.slot'); let userWords = [];
+      slots.forEach(s => userWords.push(s.innerText.trim()));
+      userAnswer = userWords.join(' '); 
+      // ★ 대충 맞춰도 일단 넘어가게 허용 (빈칸이 있어도 채점 진행, 틀린 걸로 간주)
+      isWin = (userAnswer.toLowerCase().replace(/\s+/g, '') === q.answer.toLowerCase().replace(/\s+/g, ''));
+    }
+
+    if (isWin) fireConfetti();
+    const fb = document.getElementById('feedback'); fb.style.display = 'block'; fb.className = isWin ? "feedback correct" : "feedback wrong";
+    let cleanFullB = q.full_b.replace(/\*\*/g,'');
+    let resultHtml = isWin ? `<strong>✅ Perfect!</strong><br><br>B: ${cleanFullB}` : `<strong>💪 ${UI.ansCorrect}</strong> ${q.answer}`;
+    if (q.explanation) {
+      resultHtml += `<div class="explanation">💡 ${q.explanation.replace(/\[Bonus Tip\].*/gi,'')}</div>`;
+      if (isMCQ && q.distractor_exp) resultHtml += `<div style="margin-top:8px;padding:10px;background:#fdf2e9;border-radius:8px;font-size:13px;color:#d35400;">🚨 <b>${UI.ansNote}</b> ${q.distractor_exp}</div>`;
+    }
+    fb.innerHTML = resultHtml;
+    if (window.speechSynthesis) window.speechSynthesis.cancel(); isPlayingAudio = false;
+    document.getElementById('mic-instruction').style.display = 'none'; document.getElementById('mic-btn').style.display = 'none';
+    finalResults[currentIdx] = { originalIndex: q.originalIndex, question: q.speaker_a.replace(/\*\*/g,'') + " / " + cleanFullB, userAnswer, correctAnswer: q.answer, isCorrect: isWin };
+    
+    // ★ 다음 버튼으로 교체
+    const btn = document.getElementById('btn'); btn.innerText = UI.nextBtn;
+    btn.onclick = () => { if(window.speechSynthesis) window.speechSynthesis.cancel(); currentIdx++; currentIdx < questions.length ? renderCard() : finish(); };
+  }
+
+  function finish() {
+    const validResults = finalResults.filter(r => r !== undefined);
+    const correctCnt = validResults.filter(r => r.isCorrect).length;
+    const reviewHtml = validResults.map((r,i) => {
+      const col = r.isCorrect ? '#2ecc71' : '#e74c3c';
+      const ansStr = !r.isCorrect ? `<div style="color:#3498db;font-weight:bold;margin-top:3px;">${UI.ansCorrect}${r.correctAnswer}</div>` : '';
+      return `<div class="result-item" style="border-left:5px solid ${col};"><strong>Q${i+1}.</strong> ${r.question}<br><div style="margin-top:5px;color:${col}">My Answer: ${r.userAnswer}</div>${ansStr}</div>`;
+    }).join('');
+    document.getElementById('title').innerText = "Mission Clear!";
+    document.getElementById('main-content').innerHTML = `<h2 style="text-align:center;">Great job, ${student}!</h2><div style="text-align:center;font-size:50px;margin:15px 0;">🎉</div><h3 style="text-align:center;color:#34495e;">Score: ${correctCnt} / ${questions.length}</h3><div style="margin-top:25px;max-height:300px;overflow-y:auto;">${reviewHtml}</div><button class="submit-btn" onclick="window.close()" style="margin-top:25px;">Complete Session</button>`;
+    fetch(API_URL + "?action=saveResult&name=" + encodeURIComponent(student), { method: 'POST', body: JSON.stringify(validResults), headers: { 'Content-Type': 'application/json' } }).catch(e => console.log('Save error:', e));
+  }
+</script>
+</body>
+</html>
