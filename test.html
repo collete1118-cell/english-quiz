@@ -337,6 +337,10 @@
     const q=questions[currentIdx];
     isAnswerSubmitted=false; mcqSelectedAnswer=userAnswersState[currentIdx]||'';
 
+    /* ★ 버튼 모드 초기화 - 항상 Submit 모드로 시작 */
+    const mainBtn=document.getElementById('btn');
+    if(mainBtn){ mainBtn.dataset.mode='submit'; mainBtn.innerText='Submit ✓'; }
+
     document.getElementById('title').innerText=
       isKidTheme?`Quest ${currentIdx+1}/${questions.length}`:`Mission #${currentIdx+1} (Stage ${q.stage})`;
 
@@ -488,6 +492,13 @@
     userAnswersState[currentIdx]=Array.from(document.querySelectorAll('.slot')).map(s=>s.classList.contains('filled')?s.innerText:'');
   }
 
+  function goNext(){
+    playClick();
+    currentIdx++;
+    if(currentIdx<questions.length) renderCard();
+    else finish();
+  }
+
   function submitAnswer(){
     if(isAnswerSubmitted) return;
     playClick(); clearInterval(timerInterval);
@@ -552,7 +563,7 @@
 
     const btn=document.getElementById('btn');
     btn.innerText=currentIdx<questions.length-1?'Next →':'Finish 🎉';
-    btn.onclick=()=>{ playClick(); currentIdx++; currentIdx<questions.length?renderCard():finish(); };
+    btn.onclick=()=>goNext();   // ★ 직접 goNext() 연결 — dataset.mode 방식 제거
   }
 
   /* =========================================================
