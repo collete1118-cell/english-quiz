@@ -677,84 +677,89 @@
     }
   }
 
-  function startMic(){
-    playClick();
-    if(isAnswerSubmitted) return;
-    stopMic();
+  /* ── MIC (모바일/사파리 튕김 방지 최적화 및 에러 추적 팝업 적용) ── */
+function startMic(){
+  playClick();
+  if(isAnswerSubmitted) return;
 
-    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(!SR){
-      showErr('이 브라우저는 음성 인식을 지원하지 않아요 (Chrome 권장)');
-      return;
-    }
-
-    recog=new SR();
-    recog.lang='en-US';
-    recog.continuous=false;
-    recog.interimResults=true;
-
-    const micBtn=document.getElementById('mic-btn');
-    const tbox=document.getElementById('tbox');
-    const ttext=document.getElementById('ttext');
-
-    micBtn.classList.add('listening');
-    micBtn.innerHTML='🎙️ Listening...';
-    tbox.classList.add('show');
-    ttext.innerText='말하는 중...';
-
-    recog.onresult=(e)=>{
-      let text='';
-      for(let i=0;i<e.results.length;i++){
-        text += e.results[i][0].transcript;
-      }
-      ttext.innerText='"'+text.trim()+'"';
-    };
-
-    recog.onend=()=>{
-      if(isAnswerSubmitted) return;
-      micBtn.classList.remove('listening');
-      micBtn.innerHTML='🎙️ Speak Answer';
-
-      let spoken=norm(ttext.innerText.replace(/"/g, ''));
-      if(!spoken || spoken.includes('말하는 중')) return;
-
-      const q=questions[currentIdx];
-      const targetWords = norm(q.answer).split(' ');
-      const spokenWords = spoken.split(' ');
-      const match = targetWords.filter(w=>spokenWords.includes(w)).length;
-
-      if(match/targetWords.length >= 0.6){
-        const chunks=Array.isArray(q.chunked_answer)&&q.chunked_answer.length>1
-          ? q.chunked_answer
-          : String(q.answer||'').split(' ');
-        chunks.forEach((c,i)=>{
-          const s=document.getElementById('sl-'+i);
-          if(s){
-            s.innerText=c;
-            s.classList.add('filled');
-            s.classList.remove('hint-slot');
-          }
-        });
-        submitAnswer();
-      } else {
-        playOof();
-        showErr(`인식된 발음: "${spoken}" — 다시 시도하거나 Submit을 누르세요.`);
-      }
-    };
-
-    recog.onerror=(e)=>{
-      micBtn.classList.remove('listening');
-      micBtn.innerHTML='🎙️ Speak Answer';
-      if(e.error==='not-allowed') showErr('브라우저 마이크 권한을 허용해주세요.');
-      else if(e.error!=='no-speech') showErr('인식 오류: '+e.error);
-    };
-
-    try{
-      recog.start();
-    }catch(e){
-      showErr('마이크 시작 오류.');
-    }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ 
+    alert('이 브라우저는 마이크를 지원하지 않습니다. \n★아이폰은 반드시 "Safari", 갤럭시는 "Chrome" 앱을 열어서 접속해주세요. (카카오톡 내장 브라우저 불가)★'); 
+    return; 
   }
+
+  // 기존 켜져있던 마이크 강제 초기화 (충돌 에러 방지)
+  if(window.recog) {
+    try { window.recog.abort(); } catch(e){}
+  }
+
+  window.recog = new SR();
+  window.recog.lang = 'en-US';
+  window.recog.continuous = false;
+  window.recog.interimResults = false; // ★ 핵심: 모바일 튕김 주원인이었던 실시간 인식 강제 종료
+
+  const micBtn = document.getElementById('mic-btn');
+  const tbox = document.getElementById('tbox');
+  const ttext = document.getElementById('ttext');
+
+  // 마이크가 켜질 때 화면 변화
+  window.recog.onstart = () => {
+    micBtn.classList.add('listening'); 
+    micBtn.innerHTML = '🎙️ Listening... (말씀하세요)';
+    tbox.classList.add('show'); 
+    ttext.innerText = '듣고 있습니다...';
+  };
+
+  // 말이 완전히 끝나면 딱 한 번만 텍스트로 변환하여 채점
+  window.recog.onresult = (e) => {
+    let spoken = norm(e.results[0][0].transcript);
+    ttext.innerText = '"' + spoken + '"';
+    
+    const q = questions[currentIdx];
+    const target = norm(q.answer).split(' ');
+    const match = target.filter(w => spoken.split(' ').includes(w)).length;
+
+    // 50% 이상 단어가 일치하면 정답 처리
+    if(match/target.length >= 0.5){
+      const chunks = Array.isArray(q.chunked_answer) && q.chunked_answer.length > 1 ? q.chunked_answer : [q.answer];
+      chunks.forEach((c,i)=>{ 
+        const s = document.getElementById('sl-'+i); 
+        if(s){ s.innerText=c; s.classList.add('filled'); s.classList.remove('hint-slot'); } 
+      });
+      micBtn.classList.remove('listening'); 
+      micBtn.innerHTML = '🎙️ Speak Answer';
+      submitAnswer();
+    } else {
+      playOof();
+      showErr(`인식 실패: "${spoken}" — 다시 시도해주세요.`);
+    }
+  };
+
+  // 에러 발생 시 원인을 정확하게 팝업으로 안내
+  window.recog.onerror = (e) => {
+    micBtn.classList.remove('listening'); 
+    micBtn.innerHTML = '🎙️ Speak Answer';
+    
+    if (e.error === 'not-allowed') {
+      alert('마이크 권한이 차단되었습니다.\n주소창 옆(aA 기호나 자물쇠)을 눌러 마이크 권한을 "허용"으로 바꿔주세요.');
+    } else if (e.error !== 'no-speech') {
+      alert('마이크 에러 발생: ' + e.error);
+    }
+  };
+
+  window.recog.onend = () => {
+    if(!isAnswerSubmitted) { 
+      micBtn.classList.remove('listening'); 
+      micBtn.innerHTML = '🎙️ Speak Answer'; 
+    }
+  };
+
+  try { 
+    window.recog.start(); 
+  } catch(e) { 
+    alert('마이크를 켤 수 없습니다. 페이지를 새로고침 해주세요.'); 
+  }
+}
 
   /* ── Finish ── */
   function finish(){
