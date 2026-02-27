@@ -13,847 +13,617 @@
     }
     * { box-sizing: border-box; }
     body {
-      font-family: 'Poppins', sans-serif;
-      background: var(--bg);
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px 0;
+      font-family: 'Poppins', sans-serif; background: var(--bg);
+      display: flex; justify-content: center; align-items: flex-start;
+      min-height: 100vh; margin: 0; padding: 20px 0;
     }
     .card {
-      background: var(--card);
-      border-radius: 28px;
+      background: var(--card); border-radius: 28px;
       box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-      width: 92%;
-      max-width: 520px;
-      overflow: hidden;
+      width: 92%; max-width: 540px; overflow: hidden;
     }
-    .banner {
-      width: 100%; height: 60px;
-      background: #2c3e50;
-      display: flex; align-items: center;
-      padding: 0 20px;
-    }
-    .banner-text { color: white; margin: 0; font-size: 18px; font-weight: 700; }
-    .content { padding: 20px; }
+    .banner { width:100%; height:60px; background:#2c3e50; display:flex; align-items:center; padding:0 20px; }
+    .banner-text { color:white; margin:0; font-size:18px; font-weight:700; }
+    .content { padding:20px; }
 
-    /* ── Progress ── */
-    .progress-container { display: flex; justify-content: space-between; margin-bottom: 18px; gap: 6px; }
-    .progress-step { flex: 1; height: 8px; background: #ecf0f1; border-radius: 4px; transition: 0.3s; }
-    .progress-step.active { background: var(--primary); }
+    .progress-container { display:flex; justify-content:space-between; margin-bottom:18px; gap:6px; }
+    .progress-step { flex:1; height:8px; background:#ecf0f1; border-radius:4px; transition:0.3s; }
+    .progress-step.active { background:var(--primary); }
 
-    /* ── Scenario ── */
     .scenario-box {
-      background: #fdfdfd; padding: 14px 16px; border-radius: 12px;
-      margin-bottom: 14px; border-left: 4px solid var(--primary);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      background:#fdfdfd; padding:14px 16px; border-radius:12px;
+      margin-bottom:14px; border-left:4px solid var(--primary);
+      box-shadow:0 2px 8px rgba(0,0,0,0.04);
     }
-    .instruction-text { font-size: 13.5px; font-weight: 800; color: #2980b9; margin-bottom: 5px; }
-    .scenario-text { font-size: 13px; color: var(--text); font-weight: 600; line-height: 1.4; }
+    .instruction-text { font-size:13.5px; font-weight:800; color:#2980b9; margin-bottom:5px; }
+    .scenario-text { font-size:13px; color:var(--text); font-weight:600; line-height:1.4; }
 
-    /* ── Audio / Hint / Timer ── */
     .audio-btn {
-      background: var(--success); color: white; border: none;
-      padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700;
-      cursor: pointer; width: 100%; margin-bottom: 16px;
-      box-shadow: 0 4px #27ae60; transition: 0.1s; position: relative;
+      background:var(--success); color:white; border:none;
+      padding:14px; border-radius:12px; font-size:15px; font-weight:700;
+      cursor:pointer; width:100%; margin-bottom:16px;
+      box-shadow:0 4px #27ae60; transition:0.1s; position:relative;
     }
-    .audio-btn:active { top: 4px; box-shadow: none; }
-    .audio-btn.playing { background: var(--danger); box-shadow: 0 4px #c0392b; }
+    .audio-btn:active { top:4px; box-shadow:none; }
+    .audio-btn.playing { background:var(--danger); box-shadow:0 4px #c0392b; }
 
-    .hint-btn {
-      background: #f39c12; color: white; border: none;
-      padding: 8px 15px; border-radius: 8px; font-size: 12px;
-      font-weight: bold; cursor: pointer; margin-bottom: 14px; display: none;
-    }
-    .hint-text {
-      font-size: 13px; color: #7f8c8d; display: none;
-      margin-bottom: 14px; padding: 10px;
-      background: #fdf2e9; border-radius: 8px;
-    }
-    .timer-bar { height: 6px; background: #ecf0f1; border-radius: 3px; overflow: hidden; display: none; margin-bottom: 18px; }
-    .timer-fill { height: 100%; background: var(--danger); width: 100%; transition: width 1s linear; }
+    .hint-btn { background:#f39c12; color:white; border:none; padding:8px 15px; border-radius:8px; font-size:12px; font-weight:bold; cursor:pointer; margin-bottom:14px; display:none; }
+    .hint-text-opic { font-size:13px; color:#7f8c8d; display:none; margin-bottom:14px; padding:10px; background:#fdf2e9; border-radius:8px; }
+    .timer-bar { height:6px; background:#ecf0f1; border-radius:3px; overflow:hidden; display:none; margin-bottom:18px; }
+    .timer-fill { height:100%; background:var(--danger); width:100%; transition:width 1s linear; }
 
-    /* ── Chat layout ── */
-    .chat-container { display: flex; flex-direction: column; gap: 18px; margin-bottom: 20px; }
+    /* ── Chat ── */
+    .chat-container { display:flex; flex-direction:column; gap:18px; margin-bottom:20px; }
+    .chat-row { display:flex; align-items:flex-start; gap:12px; }
+    .chat-row.speaker-b { flex-direction:row-reverse; }
 
-    .chat-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-    }
-    /* B (student) → right-aligned */
-    .chat-row.speaker-b {
-      flex-direction: row-reverse;
-    }
-
-    .chat-avatar-wrapper {
-      display: flex; flex-direction: column; align-items: center;
-      width: 70px; flex-shrink: 0;
-    }
+    /* ★ 아바타 크게 86px */
+    .chat-avatar-wrapper { display:flex; flex-direction:column; align-items:center; width:92px; flex-shrink:0; }
     .chat-avatar-svg {
-      width: 64px; height: 64px;
-      border-radius: 50%; overflow: hidden;
-      background: #ecf0f1;
-      border: 3px solid #bdc3c7;
+      width:86px; height:86px; border-radius:50%; overflow:hidden;
+      background:#ecf0f1; border:3px solid #bdc3c7;
     }
-    .female-wrapper { border-color: #3498db !important; background: #e3f2fd !important; }
-    .chat-name { font-size: 11px; font-weight: 800; color: #7f8c8d; margin-top: 5px; text-align: center; }
+    .female-wrapper { border-color:#3498db !important; background:#e3f2fd !important; }
+    .chat-name { font-size:12px; font-weight:800; color:#7f8c8d; margin-top:5px; text-align:center; }
 
     .chat-bubble {
-      background: #f1f2f6; padding: 14px 16px;
-      border-radius: 18px; font-size: 14.5px;
-      line-height: 1.55; color: var(--text);
-      flex: 1; min-width: 0; /* prevents overflow */
+      background:#f1f2f6; padding:14px 16px; border-radius:18px;
+      font-size:14.5px; line-height:1.6; color:var(--text); flex:1; min-width:0;
     }
-    .speaker-b .chat-bubble {
-      background: #eef2f7;
-      border: 2px solid var(--primary);
-      font-weight: 600;
-    }
+    .speaker-b .chat-bubble { background:#eef2f7; border:2px solid var(--primary); font-weight:600; }
 
-    /* ── Slot / Assembly ── */
-    .slot-group { display: inline-flex; flex-wrap: wrap; gap: 5px; vertical-align: middle; }
+    /* ── Slots ── */
+    .slot-group { display:inline-flex; flex-wrap:wrap; gap:5px; vertical-align:middle; margin:2px 0; }
     .slot {
-      padding: 5px 11px; border: 2px dashed #bdc3c7; border-radius: 8px;
-      min-width: 38px; min-height: 34px;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-weight: 700; color: var(--text); cursor: pointer;
-      background: white; font-size: 14px; transition: 0.15s;
+      padding:6px 14px; border:2px dashed #bdc3c7; border-radius:10px;
+      min-width:44px; min-height:36px; display:inline-flex; align-items:center;
+      justify-content:center; font-weight:700; color:var(--text); cursor:pointer;
+      background:white; font-size:14px; transition:0.15s; white-space:nowrap;
     }
-    .slot.filled { border-style: solid; border-color: var(--primary); background: #eef2f7; }
-    .slot.hint-text-slot { color: #bdc3c7; font-style: italic; font-size: 12px; }
+    .slot.filled { border-style:solid; border-color:var(--primary); background:#eef2f7; }
+    .slot.hint-slot { color:#aab0ba; font-style:italic; font-size:12px; }
 
     /* ── MCQ ── */
-    .mcq-area { margin-bottom: 10px; }
+    .mcq-area { margin-bottom:10px; }
     .mcq-btn {
-      width: 100%; text-align: left; padding: 14px 16px;
-      background: white; border: 2px solid #eef2f7;
-      border-radius: 12px; font-size: 14.5px; font-weight: 600;
-      color: var(--text); margin-bottom: 10px; cursor: pointer;
-      transition: 0.2s;
+      width:100%; text-align:left; padding:14px 16px; background:white;
+      border:2px solid #eef2f7; border-radius:12px; font-size:14.5px;
+      font-weight:600; color:var(--text); margin-bottom:10px; cursor:pointer; transition:0.2s;
     }
-    .mcq-btn:hover { border-color: var(--primary); background: #f8fbff; }
-    .mcq-btn.selected { background: var(--primary); color: white; border-color: var(--primary); }
+    .mcq-btn:hover { border-color:var(--primary); background:#f8fbff; }
+    .mcq-btn.selected { background:var(--primary); color:white; border-color:var(--primary); }
 
     /* ── Word Bank ── */
-    .word-bank {
-      display: flex; flex-wrap: wrap; gap: 8px;
-      margin: 16px 0; justify-content: center;
-    }
+    .word-bank { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; justify-content:center; }
     .word-btn {
-      background: #fff; border: 2px solid var(--primary);
-      color: var(--primary); padding: 9px 16px;
-      border-radius: 12px; font-weight: 700;
-      cursor: pointer; font-size: 14.5px; transition: 0.1s;
+      background:#fff; border:2px solid var(--primary); color:var(--primary);
+      padding:9px 16px; border-radius:12px; font-weight:700; cursor:pointer;
+      font-size:14.5px; transition:0.1s; white-space:nowrap;
     }
-    .word-btn:hover { background: var(--primary); color: white; }
-    .word-btn.used { visibility: hidden; pointer-events: none; }
+    .word-btn:hover { background:var(--primary); color:white; }
+    .word-btn.used { visibility:hidden; pointer-events:none; }
 
     /* ── Mic ── */
     .mic-btn {
-      background: var(--danger); color: white;
-      margin-top: 10px; width: 100%;
-      border-radius: 12px; padding: 14px;
-      font-size: 15px; font-weight: 700;
-      border: none; cursor: pointer;
-      display: none; align-items: center; justify-content: center;
-      box-shadow: 0 4px #c0392b; transition: 0.1s; position: relative;
+      background:var(--danger); color:white; margin-top:10px; width:100%;
+      border-radius:12px; padding:14px; font-size:15px; font-weight:700;
+      border:none; cursor:pointer; display:none; align-items:center;
+      justify-content:center; gap:8px; box-shadow:0 4px #c0392b; transition:0.1s; position:relative;
     }
-    .mic-btn:active { top: 4px; box-shadow: none; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-    .mic-btn.listening { animation: pulse 1.5s infinite; background: #ff6b81; }
+    .mic-btn:active { top:4px; box-shadow:none; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .mic-btn.listening { animation:pulse 1.2s infinite; background:#e84393; box-shadow:0 4px #b5006e; }
+
+    /* ★ 실시간 인식 텍스트 박스 */
+    .transcript-box {
+      display:none; margin-top:10px; padding:10px 14px;
+      border-radius:10px; background:#fdf2e9; border:1px solid #f39c12;
+      font-size:13.5px; color:#7f6000; font-style:italic;
+      min-height:38px; line-height:1.5;
+    }
+    .transcript-box.show { display:block; }
 
     /* ── Buttons ── */
-    .button-group { display: flex; gap: 10px; margin-top: 16px; }
+    .button-group { display:flex; gap:10px; margin-top:16px; }
     .nav-btn {
-      background: #95a5a6; color: white; border: none;
-      padding: 15px; border-radius: 12px; font-size: 15px;
-      font-weight: 700; cursor: pointer; flex: 1;
-      box-shadow: 0 4px #7f8c8d; position: relative;
+      background:#95a5a6; color:white; border:none; padding:15px;
+      border-radius:12px; font-size:15px; font-weight:700;
+      cursor:pointer; flex:1; box-shadow:0 4px #7f8c8d; position:relative;
     }
     .submit-btn {
-      background: var(--primary); color: white; border: none;
-      padding: 15px; border-radius: 12px; font-size: 15px;
-      font-weight: 700; cursor: pointer; flex: 2;
-      box-shadow: 0 4px var(--btn-shadow); position: relative;
+      background:var(--primary); color:white; border:none; padding:15px;
+      border-radius:12px; font-size:15px; font-weight:700; cursor:pointer;
+      flex:2; box-shadow:0 4px var(--btn-shadow); position:relative;
     }
-    .nav-btn:active, .submit-btn:active { top: 4px; box-shadow: none; }
+    .nav-btn:active, .submit-btn:active { top:4px; box-shadow:none; }
 
     /* ── Feedback ── */
-    .feedback {
-      margin-top: 20px; padding: 18px; border-radius: 12px;
-      font-size: 14.5px; display: none; line-height: 1.6;
-    }
-    .correct { background: #e8f8f5; color: #1abc9c; border: 1px solid #1abc9c; }
-    .wrong   { background: #fdedec; color: var(--danger); border: 1px solid var(--danger); }
+    .feedback { margin-top:20px; padding:18px; border-radius:12px; font-size:14.5px; display:none; line-height:1.6; }
+    .correct { background:#e8f8f5; color:#1abc9c; border:1px solid #1abc9c; }
+    .wrong   { background:#fdedec; color:var(--danger); border:1px solid var(--danger); }
 
-    .hint-details {
-      margin-top: 10px; background: #fff; border-radius: 8px;
-      padding: 12px; border: 1px solid #dcdde1; cursor: pointer;
-    }
-    .hint-details summary {
-      font-size: 13.5px; font-weight: 800; color: #2c3e50;
-      outline: none; margin-bottom: 4px;
-    }
-    .explanation {
-      margin-top: 8px; font-size: 13px; color: #34495e;
-      font-weight: 500; border-top: 1px solid #eee;
-      padding-top: 8px; line-height: 1.5;
+    .hint-details { margin-top:10px; background:#fff; border-radius:8px; padding:12px; border:1px solid #dcdde1; }
+    .hint-details summary { font-size:13.5px; font-weight:800; color:#2c3e50; outline:none; margin-bottom:4px; cursor:pointer; }
+    .explanation { margin-top:8px; font-size:13px; color:#34495e; font-weight:500; border-top:1px solid #eee; padding-top:8px; line-height:1.6; }
+    .why-block {
+      display:block; margin-top:8px; padding:8px 12px;
+      background:#fff8e1; border-left:3px solid #f39c12;
+      border-radius:6px; color:#7f6000; font-weight:600; font-style:normal;
     }
 
-    /* ── Inline error ── */
-    #inline-error { color: red; font-weight: bold; display: none; margin-top: 10px; font-size: 13px; }
+    #inline-error { display:none; margin-top:8px; padding:8px 12px; background:#fdedec; border-radius:8px; color:var(--danger); font-weight:700; font-size:13px; }
 
-    /* ── Roblox / Kid theme ── */
-    body.roblox-theme {
-      --bg: #2c3e50; --card: #ecf0f1; --primary: #f1c40f;
-      --danger: #e74c3c; --success: #2ecc71; --btn-shadow: #f39c12;
-      font-family: 'Comic Sans MS', 'Poppins', sans-serif;
-    }
-    body.roblox-theme .banner { background: #8e44ad; border-bottom: 6px solid #732d91; }
-    body.roblox-theme .slot { border: 3px solid #bdc3c7; border-radius: 4px; background: #fff; box-shadow: inset 0 -4px rgba(0,0,0,0.1); font-weight: 900; }
-    body.roblox-theme .word-btn { border-radius: 6px; border: 3px solid #f39c12; background: #f1c40f; color: #333; box-shadow: 0 6px #d35400; text-transform: uppercase; }
-    body.roblox-theme .word-btn:active { top: 6px; box-shadow: none; }
-    body.roblox-theme .progress-step { background: #bdc3c7; border: 2px solid #7f8c8d; border-radius: 0; }
-    body.roblox-theme .progress-step.active { background: #2ecc71; border-color: #27ae60; }
+    /* ── Roblox ── */
+    body.roblox-theme { --bg:#2c3e50; --card:#ecf0f1; --primary:#f1c40f; --danger:#e74c3c; --success:#2ecc71; --btn-shadow:#f39c12; font-family:'Comic Sans MS','Poppins',sans-serif; }
+    body.roblox-theme .banner { background:#8e44ad; border-bottom:6px solid #732d91; }
+    body.roblox-theme .slot { border:3px solid #bdc3c7; border-radius:4px; background:#fff; box-shadow:inset 0 -4px rgba(0,0,0,0.1); font-weight:900; }
+    body.roblox-theme .word-btn { border-radius:6px; border:3px solid #f39c12; background:#f1c40f; color:#333; box-shadow:0 6px #d35400; text-transform:uppercase; }
+    body.roblox-theme .progress-step { background:#bdc3c7; border:2px solid #7f8c8d; border-radius:0; }
+    body.roblox-theme .progress-step.active { background:#2ecc71; border-color:#27ae60; }
   </style>
 </head>
 <body>
   <div id="app" class="card">
-    <div id="banner" class="banner">
-      <h1 id="title" class="banner-text">Loading...</h1>
-    </div>
-    <div id="main-content" class="content">
-      <h2 style="text-align:center;">Preparing Mission... 🚀</h2>
-    </div>
+    <div id="banner" class="banner"><h1 id="title" class="banner-text">Loading...</h1></div>
+    <div id="main-content" class="content"><h2 style="text-align:center;">Preparing Mission... 🚀</h2></div>
   </div>
-
   <audio id="snd-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
   <audio id="snd-oof"   src="https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3"></audio>
 
 <script>
-  /* =========================================================
-     CONFIG
-  ========================================================= */
-  const params = new URLSearchParams(window.location.search);
+  const params  = new URLSearchParams(window.location.search);
   const student = params.get('name') || '은영';
   const DEFAULT_API = "https://script.google.com/macros/s/AKfycbxr2-JUh8aQnh7zkygYpZwoquVgwYzoA6CgDxhyrbK8ib0-sh7v_Wk7d2N1VB2mwX2g/exec";
   const API_URL = params.get('api') || DEFAULT_API;
 
-  /* =========================================================
-     STATE
-  ========================================================= */
-  let questions = [], currentIdx = 0, finalResults = [];
-  let userAnswersState = [];
-  let voices = [], isPlayingAudio = false, timerInterval = null;
-  let safeWords = [], mcqSelectedAnswer = "", recognition = null;
-  let isKidTheme = false, isOPICMode = false;
-  let isAnswerSubmitted = false;
+  let questions=[], currentIdx=0, finalResults=[], userAnswersState=[];
+  let voices=[], isPlayingAudio=false, timerInterval=null;
+  let safeWords=[], mcqSelectedAnswer='', recognition=null;
+  let isKidTheme=false, isOPICMode=false, isAnswerSubmitted=false;
 
-  /* =========================================================
-     SPEECH
-  ========================================================= */
+  /* ── Speech Recognition init ── */
   try {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SR) recognition = new SR();
-  } catch(e) {}
+    if (SR) {
+      recognition = new SR();
+      recognition.continuous     = false;
+      recognition.interimResults = true;  // ★ 실시간 중간결과
+      recognition.lang           = 'en-US';
+    }
+  } catch(e){}
 
-  function loadVoices() {
-    voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en-'));
-  }
-  if ('speechSynthesis' in window) {
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-  }
+  function loadVoices(){ voices = window.speechSynthesis.getVoices().filter(v=>v.lang.startsWith('en-')); }
+  if('speechSynthesis' in window){ loadVoices(); window.speechSynthesis.onvoiceschanged=loadVoices; }
 
-  /* =========================================================
-     FETCH DATA
-  ========================================================= */
-  fetch(API_URL + "?action=getData&name=" + encodeURIComponent(student))
-    .then(r => r.json())
-    .then(data => {
-      if (data.error) {
-        document.getElementById('main-content').innerHTML =
-          `<h3 style="color:red;text-align:center;">Error: ${data.error}</h3>`;
-        return;
-      }
-      questions = data;
-      isKidTheme  = !!questions[0].isKid;
-      isOPICMode  = !!questions[0].isOPIc;
-      if (isKidTheme) document.body.classList.add('roblox-theme');
+  fetch(API_URL+'?action=getData&name='+encodeURIComponent(student))
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.error){ document.getElementById('main-content').innerHTML=`<h3 style="color:red;text-align:center;">Error: ${data.error}</h3>`; return; }
+      questions=data; isKidTheme=!!questions[0].isKid; isOPICMode=!!questions[0].isOPIc;
+      if(isKidTheme) document.body.classList.add('roblox-theme');
       renderCard();
     })
-    .catch(err => {
-      document.getElementById('main-content').innerHTML =
-        `<h3 style="color:red;text-align:center;">Network error: ${err}</h3>`;
-    });
+    .catch(err=>{ document.getElementById('main-content').innerHTML=`<h3 style="color:red;text-align:center;">Network error: ${err}</h3>`; });
+
+  function playClick(){ if(isKidTheme) document.getElementById('snd-click').play().catch(()=>{}); }
+  function playOof(){   if(isKidTheme) document.getElementById('snd-oof').play().catch(()=>{}); }
 
   /* =========================================================
-     SOUND HELPERS
+     SVG AVATAR  (얼굴 크고 선명하게)
   ========================================================= */
-  function playClick() { if (isKidTheme) document.getElementById('snd-click').play().catch(() => {}); }
-  function playOof()   { if (isKidTheme) document.getElementById('snd-oof').play().catch(() => {}); }
+  function buildCleanSVG(gender, emotion){
+    const F    = gender==='female';
+    const skin = F ? '#ffd5ae' : '#f0b87a';
+    const hair = F ? '#1a1a2e' : '#2c3e50';
+    const suit = F ? '#2980b9' : '#1a252f';
+    const shirtColor = '#ecf0f1';
 
-  /* =========================================================
-     SVG AVATAR
-  ========================================================= */
-  function buildCleanSVG(gender, emotion) {
-    const F = (gender === 'female');
-    const skin = F ? '#ffe0bd' : '#f1c27d', hair = '#2c3e50', suit = '#1a252f';
-
-    const face    = `<rect x="25" y="25" width="50" height="60" rx="25" fill="${skin}"/>`;
+    const face = `<ellipse cx="50" cy="47" rx="23" ry="27" fill="${skin}"/>`;
     const hairSVG = F
-      ? `<path d="M 20,80 Q 20,10 50,10 Q 80,10 80,80 Q 85,90 75,90 L 75,50 Q 50,20 25,50 L 25,90 Q 15,90 20,80 Z" fill="${hair}"/>`
-      : `<path d="M 23,50 Q 23,10 50,10 Q 77,10 77,50 Q 77,30 50,25 Q 23,30 23,50 Z" fill="${hair}"/>`;
+      ? `<path d="M 27,47 Q 27,16 50,14 Q 73,16 73,47 Q 77,57 71,59 L 71,37 Q 50,12 29,37 L 29,59 Q 23,57 27,47 Z" fill="${hair}"/>`
+      : `<path d="M 29,45 Q 29,16 50,14 Q 71,16 71,45 Q 71,26 50,22 Q 29,26 29,45 Z" fill="${hair}"/>`;
+    const body = `<path d="M 12,100 Q 30,70 50,66 Q 70,70 88,100 Z" fill="${suit}"/>
+                  <path d="M 43,66 L 50,78 L 57,66" fill="${shirtColor}" opacity="0.85"/>`;
 
     const emoMap = {
-      urgent:   {bY:2,  bAL:25, bAR:-25, eO:1.2, mT:'wavy',     sweat:true},
-      worried:  {bY:1,  bAL:-15,bAR:15,  eO:0.8, mT:'sad'},
-      resigned: {bY:-2, bAL:-15,bAR:15,  eO:0.5, mT:'flat',     bags:true},
-      happy:    {bY:-2, bAL:-5, bAR:5,   eO:1.0, mT:'bigSmile'},
+      urgent:    {bY:3, bAL:28, bAR:-28, eO:1.3, mT:'wavy',     sweat:true},
+      worried:   {bY:2, bAL:-18,bAR:18,  eO:0.85,mT:'sad'},
+      resigned:  {bY:-3,bAL:-18,bAR:18,  eO:0.5, mT:'flat',     bags:true},
+      happy:     {bY:-3,bAL:-6, bAR:6,   eO:1.1, mT:'bigSmile'},
       understand:{bY:-2,bAL:0,  bAR:0,   eO:1.0, mT:'smile'},
-      exhausted:{bY:0,  bAL:0,  bAR:0,   eO:0.3, mT:'flat',     bags:true},
-      proud:    {bY:-2, bAL:-5, bAR:5,   eO:1.0, mT:'bigSmile'},
-      focused:  {bY:3,  bAL:15, bAR:-15, eO:0.8, mT:'firm'},
-      curious:  {bY:-5, bAL:0,  bAR:0,   eO:1.2, mT:'o'},
-      serious:  {bY:2,  bAL:5,  bAR:-5,  eO:0.9, mT:'firm'},
-      blank:    {bY:0,  bAL:0,  bAR:0,   eO:0.8, mT:'dot'},
+      exhausted: {bY:0, bAL:0,  bAR:0,   eO:0.3, mT:'flat',     bags:true},
+      proud:     {bY:-3,bAL:-6, bAR:6,   eO:1.1, mT:'bigSmile'},
+      focused:   {bY:4, bAL:18, bAR:-18, eO:0.85,mT:'firm'},
+      curious:   {bY:-5,bAL:0,  bAR:0,   eO:1.3, mT:'o'},
+      serious:   {bY:3, bAL:6,  bAR:-6,  eO:0.9, mT:'firm'},
+      blank:     {bY:0, bAL:0,  bAR:0,   eO:0.8, mT:'dot'},
     };
     const E = emoMap[emotion] || emoMap.serious;
 
-    const eyeL = `<ellipse cx="38" cy="50" rx="4" ry="${4*E.eO}" fill="#111"/>`;
-    const eyeR = `<ellipse cx="62" cy="50" rx="4" ry="${4*E.eO}" fill="#111"/>`;
-    const nose  = `<path d="M 50,52 L 50,62 L 53,62" stroke="#d35400" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round"/>`;
-    const browL = `<line x1="30" y1="${42+E.bY}" x2="45" y2="${42+E.bY}" stroke="#333" stroke-width="3.5" stroke-linecap="round" transform="rotate(${E.bAL},37.5,42)"/>`;
-    const browR = `<line x1="55" y1="${42+E.bY}" x2="70" y2="${42+E.bY}" stroke="#333" stroke-width="3.5" stroke-linecap="round" transform="rotate(${E.bAR},62.5,42)"/>`;
+    /* 눈 (하이라이트 포함) */
+    const eyeL = `<ellipse cx="40" cy="46" rx="4.5" ry="${4.5*E.eO}" fill="#111"/>
+                  <ellipse cx="41" cy="44.5" rx="1.5" ry="${Math.max(1,1.5*E.eO)}" fill="white" opacity="0.6"/>`;
+    const eyeR = `<ellipse cx="60" cy="46" rx="4.5" ry="${4.5*E.eO}" fill="#111"/>
+                  <ellipse cx="61" cy="44.5" rx="1.5" ry="${Math.max(1,1.5*E.eO)}" fill="white" opacity="0.6"/>`;
+    const nose = `<path d="M 50,50 L 48,58 Q 50,60 52,58 Z" fill="${skin}" stroke="#c8956c" stroke-width="1.2" opacity="0.8"/>`;
+    const bY = E.bY;
+    const browL=`<path d="M 33,${39+bY} Q 40,${37+bY} 47,${39+bY}" stroke="#333" stroke-width="3" fill="none" stroke-linecap="round" transform="rotate(${E.bAL},40,${38+bY})"/>`;
+    const browR=`<path d="M 53,${39+bY} Q 60,${37+bY} 67,${39+bY}" stroke="#333" stroke-width="3" fill="none" stroke-linecap="round" transform="rotate(${E.bAR},60,${38+bY})"/>`;
 
-    let mouth = '';
-    if (E.mT==='flat')     mouth=`<line x1="44" y1="70" x2="56" y2="70" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>`;
-    if (E.mT==='dot')      mouth=`<line x1="48" y1="70" x2="52" y2="70" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>`;
-    if (E.mT==='firm')     mouth=`<line x1="40" y1="70" x2="60" y2="70" stroke="#333" stroke-width="3" stroke-linecap="round"/>`;
-    if (E.mT==='sad')      mouth=`<path d="M 45,73 Q 50,65 55,73" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
-    if (E.mT==='smile')    mouth=`<path d="M 44,68 Q 50,75 56,68" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
-    if (E.mT==='bigSmile') mouth=`<path d="M 42,68 Q 50,80 58,68 Z" fill="#fff" stroke="#333" stroke-width="2.5"/>`;
-    if (E.mT==='o')        mouth=`<circle cx="50" cy="72" r="3.5" fill="#333"/>`;
-    if (E.mT==='wavy')     mouth=`<path d="M 42,72 Q 45,68 48,72 Q 52,76 55,72" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    const my=64;
+    let mouth='';
+    if(E.mT==='flat')     mouth=`<line x1="44" y1="${my}" x2="56" y2="${my}" stroke="#555" stroke-width="2.5" stroke-linecap="round"/>`;
+    if(E.mT==='dot')      mouth=`<circle cx="50" cy="${my}" r="2" fill="#555"/>`;
+    if(E.mT==='firm')     mouth=`<line x1="42" y1="${my}" x2="58" y2="${my}" stroke="#333" stroke-width="3" stroke-linecap="round"/>`;
+    if(E.mT==='sad')      mouth=`<path d="M 44,${my+2} Q 50,${my-5} 56,${my+2}" stroke="#555" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    if(E.mT==='smile')    mouth=`<path d="M 44,${my-2} Q 50,${my+6} 56,${my-2}" stroke="#555" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+    if(E.mT==='bigSmile') mouth=`<path d="M 41,${my-2} Q 50,${my+9} 59,${my-2}" fill="#fff" stroke="#333" stroke-width="2.5"/>`;
+    if(E.mT==='o')        mouth=`<ellipse cx="50" cy="${my}" rx="4" ry="5" fill="#333"/>`;
+    if(E.mT==='wavy')     mouth=`<path d="M 42,${my} Q 46,${my-4} 50,${my} Q 54,${my+4} 58,${my}" stroke="#555" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
 
-    const sweat = E.sweat ? `<g fill="#3498db" opacity="0.8"><ellipse cx="15" cy="40" rx="3" ry="5"/><ellipse cx="10" cy="50" rx="2.5" ry="4"/></g>` : '';
-    const bags  = E.bags  ? `<path d="M 32,58 Q 38,62 44,58 M 56,58 Q 62,62 68,58" stroke="#333" stroke-width="1.5" fill="none" opacity="0.4"/>` : '';
+    const sweat=E.sweat?`<ellipse cx="19" cy="36" rx="3" ry="5" fill="#74b9ff" opacity="0.85"/><ellipse cx="14" cy="48" rx="2.5" ry="4" fill="#74b9ff" opacity="0.7"/>`:'';
+    const bags =E.bags ?`<path d="M 34,54 Q 40,58 46,54 M 54,54 Q 60,58 66,54" stroke="#b2bec3" stroke-width="1.5" fill="none"/>`:'';
 
     return `<svg viewBox="0 0 100 100" width="100%" height="100%">
-      <path d="M 10,120 Q 50,75 90,120 Z" fill="${suit}"/>
-      ${face}${hairSVG}${eyeL}${eyeR}${nose}${mouth}${browL}${browR}${sweat}${bags}
+      ${body}${face}${hairSVG}${eyeL}${eyeR}${nose}${browL}${browR}${mouth}${sweat}${bags}
     </svg>`;
   }
 
-  /* =========================================================
-     AUDIO PLAYBACK
-  ========================================================= */
-  function toggleAudio(autoStartTimer) {
+  /* ── Audio playback ── */
+  function toggleAudio(autoStartTimer){
     playClick();
-    const synth = window.speechSynthesis;
-    const btn   = document.getElementById('audio-btn');
-
-    if (isPlayingAudio || synth.speaking) {
-      synth.cancel();
-      btn.innerHTML = isOPICMode ? "▶️ Play Ava's Question" : "▶️ Listen Dialogue";
-      btn.classList.remove('playing');
-      isPlayingAudio = false;
-      clearInterval(timerInterval);
-      return;
+    const synth=window.speechSynthesis, btn=document.getElementById('audio-btn');
+    if(isPlayingAudio||synth.speaking){
+      synth.cancel(); isPlayingAudio=false;
+      btn.innerHTML=isOPICMode?"▶️ Play Ava's Question":"▶️ Listen Dialogue";
+      btn.classList.remove('playing'); clearInterval(timerInterval); return;
     }
-    if (!synth || voices.length === 0) { alert("음성을 불러오는 중입니다. 잠시 후 다시 눌러주세요."); return; }
+    if(!synth||voices.length===0){ alert('음성 로딩 중입니다. 잠시 후 다시 눌러주세요.'); return; }
+    btn.innerHTML='⏹️ Stop'; btn.classList.add('playing'); isPlayingAudio=true;
 
-    btn.innerHTML = "⏹️ Stop"; btn.classList.add('playing'); isPlayingAudio = true;
+    const q=questions[currentIdx];
+    const pickVoice=g=>voices.find(v=>v.name.toLowerCase().includes(g))||voices[0];
+    const voiceA=pickVoice(q.coworker_gender==='female'?'female':'male');
+    const voiceB=pickVoice(q.student_gender==='female'?'female':'male');
+    const clean=s=>(s||'').replace(/^[^:]+:\s*/,'').replace(/[*_~\[\]]/g,'').replace(/\[BLANK\]/gi,'blank').trim();
 
-    const q = questions[currentIdx];
-    const pickVoice = (g) => voices.find(v => v.name.toLowerCase().includes(g)) || voices[0];
-    const voiceA = pickVoice(q.coworker_gender === 'female' ? 'female' : 'male');
-    const voiceB = pickVoice(q.student_gender  === 'female' ? 'female' : 'male');
-
-    const clean = s => s.replace(/^[^:]+:\s*/,'').replace(/[*_~\[\]]/g,'').replace(/\[BLANK\]/gi,'blank').trim();
-    const textA = clean(q.speaker_a);
-    const textB = clean(finalResults[currentIdx] ? q.answer : q.gapped_b);
-
-    const uA = new SpeechSynthesisUtterance(textA); uA.voice = voiceA; uA.rate = 0.95;
-    const uB = new SpeechSynthesisUtterance(textB); uB.voice = voiceB; uB.rate = 0.95;
-
-    const resetBtn = () => {
-      btn.innerHTML = isOPICMode ? "▶️ Play Ava's Question" : "▶️ Listen Dialogue";
-      btn.classList.remove('playing');
-      isPlayingAudio = false;
-    };
-    uB.onend = () => { resetBtn(); if (autoStartTimer && isOPICMode && !finalResults[currentIdx]) startOPIcTimer(); };
-    uB.onerror = resetBtn;
-    uA.onend   = () => { if (isPlayingAudio) setTimeout(() => synth.speak(uB), 400); };
-    uA.onerror = resetBtn;
-
+    const uA=new SpeechSynthesisUtterance(clean(q.speaker_a)); uA.voice=voiceA; uA.rate=0.95;
+    const uB=new SpeechSynthesisUtterance(clean(finalResults[currentIdx]?q.answer:q.gapped_b)); uB.voice=voiceB; uB.rate=0.95;
+    const reset=()=>{ btn.innerHTML=isOPICMode?"▶️ Play Ava's Question":"▶️ Listen Dialogue"; btn.classList.remove('playing'); isPlayingAudio=false; };
+    uB.onend=()=>{ reset(); if(autoStartTimer&&isOPICMode&&!finalResults[currentIdx]) startOPIcTimer(); };
+    uB.onerror=reset; uA.onerror=reset;
+    uA.onend=()=>{ if(isPlayingAudio) setTimeout(()=>synth.speak(uB),400); };
     synth.speak(uA);
   }
 
-  /* =========================================================
-     OPIc TIMER
-  ========================================================= */
-  function startOPIcTimer() {
-    const timerBar  = document.getElementById('timer-bar');
-    const timerFill = document.getElementById('timer-fill');
-    const micBtn    = document.getElementById('mic-btn');
-    if (!timerBar) return;
-    timerBar.style.display = 'block';
-    if (micBtn) micBtn.style.display = 'flex';
-    let timeLeft = 40; timerFill.style.width = '100%';
-    timerInterval = setInterval(() => {
-      timeLeft--;
-      timerFill.style.width = (timeLeft / 40 * 100) + '%';
-      if (timeLeft <= 0) { clearInterval(timerInterval); submitAnswer(); }
-    }, 1000);
+  function startOPIcTimer(){
+    const bar=document.getElementById('timer-bar'),fill=document.getElementById('timer-fill'),mic=document.getElementById('mic-btn');
+    if(!bar) return;
+    bar.style.display='block'; if(mic) mic.style.display='flex';
+    let t=40; fill.style.width='100%';
+    timerInterval=setInterval(()=>{ t--; fill.style.width=(t/40*100)+'%'; if(t<=0){clearInterval(timerInterval);submitAnswer();} },1000);
   }
 
-  /* =========================================================
-     HINT
-  ========================================================= */
-  function showHint() {
+  function showHint(){
     playClick();
-    document.getElementById('hint-btn').style.display = 'none';
-    document.getElementById('hint-text').style.display = 'block';
+    document.getElementById('hint-btn').style.display='none';
+    document.getElementById('hint-text-opic').style.display='block';
   }
 
-  /* =========================================================
-     STAGE-3 SLOT HINT (first letter only for first chunk /
-     after comma / after conjunction)
-  ========================================================= */
-  function getStage3Hint(chunk, index, allChunks) {
-    if (!chunk || questions[currentIdx].stage !== 3) return '';
-    if (index === 0) return chunk.charAt(0) + '…';
-    const prev = (allChunks[index - 1] || '').trim().toLowerCase();
-    if (prev.endsWith(',')) return chunk.charAt(0) + '…';
-    const conjunctions = ['and','but','because','so','or','if','although','though'];
-    const lastWord = prev.replace(/[^a-z0-9\s]/g,'').split(/\s+/).pop();
-    if (conjunctions.includes(lastWord)) return chunk.charAt(0) + '…';
+  function getStage3Hint(chunk,idx,all){
+    if(!chunk||questions[currentIdx].stage!==3) return '';
+    if(idx===0) return chunk.charAt(0)+'…';
+    const prev=(all[idx-1]||'').trim().toLowerCase();
+    if(prev.endsWith(',')) return chunk.charAt(0)+'…';
+    const conj=['and','but','because','so','or','if','although','though'];
+    const last=prev.replace(/[^a-z0-9\s]/g,'').split(/\s+/).pop();
+    if(conj.includes(last)) return chunk.charAt(0)+'…';
     return '';
   }
 
-  /* =========================================================
-     NORMALIZE (shared helper, defined at top level)
-  ========================================================= */
-  function normalizeText(text) {
-    return (text || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g,' ').trim();
+  function normalizeText(t){ return (t||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').replace(/\s+/g,' ').trim(); }
+
+  /* ★ speaker_a 에서 학생 이름 호칭 제거 */
+  function removeAddressedName(text, name){
+    if(!text||!name) return text;
+    const esc=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    return text.replace(new RegExp(`^${esc}[,\\.!\\s]+`,'i'),'').trim();
   }
 
   /* =========================================================
-     RENDER CARD  ← main fix is here
+     RENDER CARD
   ========================================================= */
-  function renderCard() {
-    const q = questions[currentIdx];
-    isAnswerSubmitted = false;
-    mcqSelectedAnswer = userAnswersState[currentIdx] || '';
+  function renderCard(){
+    const q=questions[currentIdx];
+    isAnswerSubmitted=false; mcqSelectedAnswer=userAnswersState[currentIdx]||'';
 
-    /* ── title ── */
-    document.getElementById('title').innerText =
-      isKidTheme ? `Quest ${currentIdx+1}/${questions.length}` : `Mission #${currentIdx+1} (Stage ${q.stage})`;
+    document.getElementById('title').innerText=
+      isKidTheme?`Quest ${currentIdx+1}/${questions.length}`:`Mission #${currentIdx+1} (Stage ${q.stage})`;
 
-    /* ── progress bar ── */
-    const progressHtml = '<div class="progress-container">' +
-      Array.from({length: questions.length}, (_, i) =>
-        `<div class="progress-step ${i <= currentIdx ? 'active' : ''}"></div>`
-      ).join('') + '</div>';
+    const progressHtml='<div class="progress-container">'+
+      Array.from({length:questions.length},(_,i)=>`<div class="progress-step ${i<=currentIdx?'active':''}"></div>`).join('')+'</div>';
 
-    /* ── avatars ── */
-    const svgA = buildCleanSVG(q.coworker_gender, q.emotion_a || 'serious');
-    const svgB = buildCleanSVG(q.student_gender,  q.emotion_b || 'focused');
-    const wrapClassA = q.coworker_gender === 'female' ? 'female-wrapper' : '';
-    const wrapClassB = q.student_gender  === 'female' ? 'female-wrapper' : '';
+    const svgA=buildCleanSVG(q.coworker_gender, q.emotion_a||'serious');
+    const svgB=buildCleanSVG(q.student_gender,  q.emotion_b||'focused');
+    const wrapA=q.coworker_gender==='female'?'female-wrapper':'';
+    const wrapB=q.student_gender ==='female'?'female-wrapper':'';
 
-    /* ── clean speaker text ── */
-    const cleanSpeakerA = (q.speaker_a || '').replace(/\*\*/g, '');
+    /* ★ speaker_a에서 학생 이름 호칭 제거 */
+    let rawA=(q.speaker_a||'').replace(/\*\*/g,'');
+    rawA=removeAddressedName(rawA, q.student_name||student);
 
-    /* ── ASSEMBLY: build bubble with inline slots ── */
-    let bubbleB_html = '';
-    let wordBankHtml  = '';
-    let mcqAreaHtml   = '';
-    let micDisplay    = 'none';
+    let bubbleB='', wordBankHtml='', mcqAreaHtml='', micDisplay='none';
 
-    if (q.type === 'MCQ') {
-      /* MCQ: blank shown as underline, choices below */
-      const cleanGapped = (q.gapped_b || '').replace(/\*\*/g,'').replace(/(\[BLANK\]\s*)+/g, '_______');
-      bubbleB_html = cleanGapped;
-
-      const options = [q.answer, ...(q.distractors || [])].filter(Boolean).sort(() => Math.random() - 0.5);
-      mcqAreaHtml = '<div class="mcq-area">' +
-        options.map(opt =>
-          `<button class="mcq-btn ${mcqSelectedAnswer === opt ? 'selected' : ''}"
-            onclick="selectMCQ(this,'${opt.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">
-            ${opt}
-          </button>`
-        ).join('') + '</div>';
-
+    if(q.type==='MCQ'){
+      bubbleB=(q.gapped_b||'').replace(/\*\*/g,'').replace(/(\[BLANK\]\s*)+/g,'<span style="letter-spacing:2px;color:#aaa;font-weight:700;">_ _ _ _ _</span>');
+      const opts=[q.answer,...(q.distractors||[])].filter(Boolean).sort(()=>Math.random()-.5);
+      mcqAreaHtml='<div class="mcq-area">'+
+        opts.map(opt=>`<button class="mcq-btn ${mcqSelectedAnswer===opt?'selected':''}" onclick="selectMCQ(this,'${opt.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'">${opt}</button>`).join('')+'</div>';
     } else {
-      /* ASSEMBLY: inject slot-group INLINE into gapped_b */
-      const chunks   = q.chunked_answer || q.answer.split(' ');
-      safeWords      = [...chunks].sort(() => Math.random() - 0.5);
+      /* ★ chunked_answer를 구문 단위로 — 단어 단위 방지 */
+      let chunks=[];
+      if(Array.isArray(q.chunked_answer)&&q.chunked_answer.length>0){
+        chunks=q.chunked_answer;
+      } else {
+        // chunked_answer가 없으면 쉼표/접속사 기준으로 최소 구문 단위 분할
+        chunks=q.answer.split(/,\s+/).map(s=>s.trim()).filter(Boolean);
+        if(chunks.length<2) chunks=[q.answer];
+      }
+      safeWords=[...chunks].sort(()=>Math.random()-.5);
 
-      /* Build the slot-group HTML */
-      const slotsHtml = '<span class="slot-group">' +
-        Array.from({length: chunks.length}, (_, i) => {
-          const hintText = getStage3Hint(chunks[i], i, chunks);
-          return `<span class="slot${hintText ? ' hint-text-slot' : ''}" id="slot-${i}"
-                    data-btn-id="" onclick="clearSlot(this,${i})">${hintText || ''}</span>`;
-        }).join('') + '</span>';
+      const slotsHtml='<span class="slot-group">'+
+        chunks.map((c,i)=>{
+          const h=getStage3Hint(c,i,chunks);
+          return `<span class="slot${h?' hint-slot':''}" id="slot-${i}" data-btn-id="" onclick="clearSlot(this,${i})">${h||''}</span>`;
+        }).join('')+'</span>';
 
-      /* Replace [BLANK] in gapped_b with the slot group */
-      const cleanGapped = (q.gapped_b || '').replace(/\*\*/g,'').replace(/(\[BLANK\]\s*)+/g, '[BLANK]');
-      bubbleB_html = cleanGapped.replace('[BLANK]', slotsHtml);
+      const cleanGapped=(q.gapped_b||'').replace(/\*\*/g,'').replace(/(\[BLANK\]\s*)+/g,'[BLANK]');
+      bubbleB=cleanGapped.includes('[BLANK]')?cleanGapped.replace('[BLANK]',slotsHtml):slotsHtml;
 
-      /* Word bank */
-      wordBankHtml = '<div class="word-bank" id="word-bank">' +
-        safeWords.map((w, i) =>
-          `<button class="word-btn" id="wb-${i}" onclick="fillSlot(${i},'wb-${i}')">${w}</button>`
-        ).join('') + '</div>';
+      wordBankHtml='<div class="word-bank" id="word-bank">'+
+        safeWords.map((w,i)=>`<button class="word-btn" id="wb-${i}" onclick="fillSlot(${i},'wb-${i}')">${w}</button>`).join('')+'</div>';
 
-      /* Show mic for ASSEMBLY non-OPIc only */
-      if (!isOPICMode) micDisplay = 'flex';
+      if(!isOPICMode) micDisplay='flex';
     }
 
-    /* ── OPIc extras ── */
-    let opicExtras = '';
-    if (isOPICMode) {
-      opicExtras = `
+    let opicExtras='';
+    if(isOPICMode){
+      opicExtras=`
         <button id="hint-btn" class="hint-btn" onclick="showHint()" style="display:block;">💡 Show Korean Hint</button>
-        <div id="hint-text" class="hint-text">${q.korean_hint || ''}</div>
+        <div id="hint-text-opic" class="hint-text-opic">${q.korean_hint||''}</div>
         <div id="timer-bar" class="timer-bar"><div id="timer-fill" class="timer-fill"></div></div>`;
     }
 
-    /* ── prev button ── */
-    const prevBtnHtml = currentIdx > 0
-      ? `<button class="nav-btn" onclick="goPrev()">← Prev</button>` : '';
+    const prevBtn=currentIdx>0?`<button class="nav-btn" onclick="goPrev()">← Prev</button>`:'';
 
-    /* ── assemble full HTML ── */
-    document.getElementById('main-content').innerHTML = `
+    document.getElementById('main-content').innerHTML=`
       <div class="scenario-box">
-        <div class="instruction-text">${q.instruction || ''}</div>
-        <div class="scenario-text">${q.scenario || ''}</div>
+        <div class="instruction-text">${q.instruction||''}</div>
+        <div class="scenario-text">${q.scenario||''}</div>
       </div>
       ${progressHtml}
       <button id="audio-btn" class="audio-btn" onclick="toggleAudio(${isOPICMode})">
-        ${isOPICMode ? "▶️ Play Ava's Question" : "▶️ Listen Dialogue"}
+        ${isOPICMode?"▶️ Play Ava's Question":"▶️ Listen Dialogue"}
       </button>
       ${opicExtras}
-
       <div class="chat-container">
-        <!-- Speaker A (coworker) — LEFT -->
         <div class="chat-row">
           <div class="chat-avatar-wrapper">
-            <div class="chat-avatar-svg ${wrapClassA}">${svgA}</div>
-            <div class="chat-name">${q.coworker_name || ''}</div>
+            <div class="chat-avatar-svg ${wrapA}">${svgA}</div>
+            <div class="chat-name">${q.coworker_name||''}</div>
           </div>
-          <div class="chat-bubble">${cleanSpeakerA}</div>
+          <div class="chat-bubble">${rawA}</div>
         </div>
-
-        <!-- Speaker B (student) — RIGHT -->
         <div class="chat-row speaker-b">
           <div class="chat-avatar-wrapper">
-            <div class="chat-avatar-svg ${wrapClassB}">${svgB}</div>
-            <div class="chat-name">${q.student_name || student}</div>
+            <div class="chat-avatar-svg ${wrapB}">${svgB}</div>
+            <div class="chat-name">${q.student_name||student}</div>
           </div>
-          <div class="chat-bubble">${bubbleB_html}</div>
+          <div class="chat-bubble">${bubbleB}</div>
         </div>
       </div>
-
       ${mcqAreaHtml}
       ${wordBankHtml}
-
       <div id="inline-error"></div>
-      <button id="mic-btn" class="mic-btn" onclick="startSpeaking()"
-        style="display:${micDisplay};">🎙️ Speak Answer</button>
+      <button id="mic-btn" class="mic-btn" onclick="startSpeaking()" style="display:${micDisplay};">🎙️ Speak Answer</button>
+      <div id="transcript-box" class="transcript-box">🎙️ <span id="transcript-text">말하는 중...</span></div>
       <div id="feedback" class="feedback"></div>
       <div class="button-group">
-        ${prevBtnHtml}
+        ${prevBtn}
         <button id="btn" class="submit-btn" onclick="submitAnswer()">Submit ✓</button>
-      </div>
-    `;
+      </div>`;
 
-    /* restore state if already answered */
-    if (finalResults[currentIdx]) {
-      restoreCompletedState();
-    } else if (q.type !== 'MCQ' && Array.isArray(userAnswersState[currentIdx])) {
-      restoreSlotState();
-    }
+    if(finalResults[currentIdx]) restoreCompletedState();
+    else if(q.type!=='MCQ'&&Array.isArray(userAnswersState[currentIdx])) restoreSlotState();
   }
 
-  /* =========================================================
-     NAVIGATION
-  ========================================================= */
-  function goPrev() {
+  function goPrev(){
     playClick();
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    if(window.speechSynthesis) window.speechSynthesis.cancel();
     clearInterval(timerInterval);
-    if (currentIdx > 0) { currentIdx--; renderCard(); }
+    if(currentIdx>0){ currentIdx--; renderCard(); }
   }
 
-  /* =========================================================
-     RESTORE SLOT STATE
-  ========================================================= */
-  function restoreSlotState() {
-    const saved = userAnswersState[currentIdx];
-    if (!Array.isArray(saved)) return;
-    saved.forEach((word, i) => {
-      const slot = document.getElementById('slot-' + i);
-      if (!slot || !word) return;
-      /* find matching word bank button */
-      const wbIdx = safeWords.indexOf(word);
-      if (wbIdx > -1) {
-        const wb = document.getElementById('wb-' + wbIdx);
-        if (wb) { wb.classList.add('used'); slot.dataset.btnId = 'wb-' + wbIdx; }
-      }
-      slot.innerText = word;
-      slot.classList.add('filled');
-      slot.classList.remove('hint-text-slot');
+  function restoreSlotState(){
+    const saved=userAnswersState[currentIdx];
+    if(!Array.isArray(saved)) return;
+    saved.forEach((word,i)=>{
+      const slot=document.getElementById('slot-'+i);
+      if(!slot||!word) return;
+      const wbIdx=safeWords.indexOf(word);
+      if(wbIdx>-1){ const wb=document.getElementById('wb-'+wbIdx); if(wb){wb.classList.add('used');slot.dataset.btnId='wb-'+wbIdx;} }
+      slot.innerText=word; slot.classList.add('filled'); slot.classList.remove('hint-slot');
     });
   }
 
-  /* =========================================================
-     MCQ SELECT
-  ========================================================= */
-  function selectMCQ(btn, opt) {
+  function selectMCQ(btn,opt){
     playClick();
-    document.querySelectorAll('.mcq-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    mcqSelectedAnswer = opt;
-    userAnswersState[currentIdx] = opt;
+    document.querySelectorAll('.mcq-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected'); mcqSelectedAnswer=opt; userAnswersState[currentIdx]=opt;
   }
 
-  /* =========================================================
-     FILL / CLEAR SLOT
-  ========================================================= */
-  function fillSlot(wIdx, btnId) {
+  function fillSlot(wIdx,btnId){
     playClick();
-    const slots = document.querySelectorAll('.slot');
-    for (let i = 0; i < slots.length; i++) {
-      if (!slots[i].classList.contains('filled')) {
-        slots[i].innerText    = safeWords[wIdx];
-        slots[i].dataset.btnId = btnId;
-        slots[i].classList.add('filled');
-        slots[i].classList.remove('hint-text-slot');
-        const wb = document.getElementById(btnId);
-        if (wb) wb.classList.add('used');
-        /* save state */
-        userAnswersState[currentIdx] = Array.from(document.querySelectorAll('.slot'))
-          .map(s => s.classList.contains('filled') ? s.innerText : '');
+    const slots=document.querySelectorAll('.slot');
+    for(let i=0;i<slots.length;i++){
+      if(!slots[i].classList.contains('filled')){
+        slots[i].innerText=safeWords[wIdx]; slots[i].dataset.btnId=btnId;
+        slots[i].classList.add('filled'); slots[i].classList.remove('hint-slot');
+        const wb=document.getElementById(btnId); if(wb) wb.classList.add('used');
+        userAnswersState[currentIdx]=Array.from(document.querySelectorAll('.slot')).map(s=>s.classList.contains('filled')?s.innerText:'');
         break;
       }
     }
   }
 
-  function clearSlot(slotEl, idx) {
+  function clearSlot(slotEl,idx){
     playClick();
-    if (!slotEl.classList.contains('filled')) return;
-    /* restore word bank button */
-    if (slotEl.dataset.btnId) {
-      const wb = document.getElementById(slotEl.dataset.btnId);
-      if (wb) wb.classList.remove('used');
-    }
-    /* restore hint if stage 3 */
-    const q = questions[currentIdx];
-    const chunks = q.chunked_answer || q.answer.split(' ');
-    const hintText = getStage3Hint(chunks[idx], idx, chunks);
-    slotEl.innerText    = hintText || '';
-    slotEl.dataset.btnId = '';
-    slotEl.classList.remove('filled');
-    if (hintText) slotEl.classList.add('hint-text-slot');
-    /* save state */
-    userAnswersState[currentIdx] = Array.from(document.querySelectorAll('.slot'))
-      .map(s => s.classList.contains('filled') ? s.innerText : '');
+    if(!slotEl.classList.contains('filled')) return;
+    if(slotEl.dataset.btnId){ const wb=document.getElementById(slotEl.dataset.btnId); if(wb) wb.classList.remove('used'); }
+    const q=questions[currentIdx];
+    const chunks=Array.isArray(q.chunked_answer)?q.chunked_answer:[q.answer];
+    const h=getStage3Hint(chunks[idx],idx,chunks);
+    slotEl.innerText=h||''; slotEl.dataset.btnId=''; slotEl.classList.remove('filled');
+    if(h) slotEl.classList.add('hint-slot');
+    userAnswersState[currentIdx]=Array.from(document.querySelectorAll('.slot')).map(s=>s.classList.contains('filled')?s.innerText:'');
   }
 
-  /* =========================================================
-     SUBMIT
-  ========================================================= */
-  function submitAnswer() {
-    if (isAnswerSubmitted) return;
-    playClick();
-    clearInterval(timerInterval);
-    if (recognition) { try { recognition.abort(); } catch(e) {} }
+  function submitAnswer(){
+    if(isAnswerSubmitted) return;
+    playClick(); clearInterval(timerInterval);
+    if(recognition){ try{ recognition.abort(); }catch(e){} }
 
-    const q = questions[currentIdx];
-    let isWin = false, userAnswer = '';
+    const q=questions[currentIdx];
+    let isWin=false, userAnswer='';
 
-    if (q.type === 'MCQ') {
-      userAnswer = mcqSelectedAnswer;
-      if (!userAnswer) {
-        showInlineError('Please select an answer first!');
-        return;
-      }
-      isWin = normalizeText(userAnswer) === normalizeText(q.answer);
+    if(q.type==='MCQ'){
+      userAnswer=mcqSelectedAnswer;
+      if(!userAnswer){ showInlineError('Please select an answer!'); return; }
+      isWin=normalizeText(userAnswer)===normalizeText(q.answer);
     } else {
-      const slots = Array.from(document.querySelectorAll('.slot'));
-      /* check all slots are filled */
-      const allFilled = slots.every(s => s.classList.contains('filled'));
-      if (!allFilled) {
-        showInlineError('Please fill in all the blanks!');
-        return;
-      }
-      userAnswer = slots.map(s => s.innerText.trim()).join(' ');
-      isWin = normalizeText(userAnswer) === normalizeText(q.answer);
+      const slots=Array.from(document.querySelectorAll('.slot'));
+      if(!slots.every(s=>s.classList.contains('filled'))){ showInlineError('Please fill in all the blanks!'); return; }
+      userAnswer=slots.map(s=>s.innerText.trim()).join(' ');
+      isWin=normalizeText(userAnswer)===normalizeText(q.answer);
     }
 
-    if (!isWin) playOof();
-
-    finalResults[currentIdx] = {
-      originalIndex: q.originalIndex,
-      question:      q.speaker_a,
-      userAnswer:    userAnswer,
-      correctAnswer: q.answer,
-      isCorrect:     isWin,
-    };
+    if(!isWin) playOof();
+    finalResults[currentIdx]={originalIndex:q.originalIndex,question:q.speaker_a,userAnswer,correctAnswer:q.answer,isCorrect:isWin};
     restoreCompletedState();
   }
 
-  function showInlineError(msg) {
-    const el = document.getElementById('inline-error');
-    if (!el) return;
-    el.innerText = msg;
-    el.style.display = 'block';
-    el.style.color   = 'red';
-    el.style.fontWeight = 'bold';
-    el.style.marginTop  = '8px';
-    setTimeout(() => { el.style.display = 'none'; }, 2500);
+  function showInlineError(msg){
+    const el=document.getElementById('inline-error');
+    if(!el) return;
+    el.innerText=msg; el.style.display='block';
+    setTimeout(()=>{ el.style.display='none'; },2500);
   }
 
-  /* =========================================================
-     RESTORE COMPLETED STATE (after correct/wrong)
-  ========================================================= */
-  function restoreCompletedState() {
-    isAnswerSubmitted = true;
-    const q   = questions[currentIdx];
-    const res = finalResults[currentIdx];
+  function restoreCompletedState(){
+    isAnswerSubmitted=true;
+    const q=questions[currentIdx], res=finalResults[currentIdx];
+    if(res.isCorrect){ try{ confetti({particleCount:150,spread:80,origin:{y:0.1}}); }catch(e){} }
 
-    /* confetti */
-    if (res.isCorrect) {
-      try { confetti({ particleCount: 150, spread: 80, origin: { y: 0.1 } }); } catch(e) {}
+    const mic=document.getElementById('mic-btn'); if(mic) mic.style.display='none';
+    const tb=document.getElementById('transcript-box'); if(tb) tb.classList.remove('show');
+
+    if(q.type!=='MCQ'){
+      const chunks=Array.isArray(q.chunked_answer)?q.chunked_answer:q.answer.split(' ');
+      chunks.forEach((c,i)=>{ const s=document.getElementById('slot-'+i); if(s){s.innerText=c;s.classList.add('filled');s.classList.remove('hint-slot');} });
+      const wb=document.getElementById('word-bank'); if(wb) wb.style.display='none';
     }
 
-    /* hide mic */
-    const mic = document.getElementById('mic-btn');
-    if (mic) mic.style.display = 'none';
+    /* ★ Why 설명 - 비어있어도 항상 표시 */
+    const whyText=(q.why_explanation||'').trim()||'This is the most natural, native-speaker phrasing in this context.';
 
-    /* fill all slots with correct answer */
-    if (q.type !== 'MCQ') {
-      const chunks = q.chunked_answer || q.answer.split(' ');
-      chunks.forEach((chunk, i) => {
-        const slot = document.getElementById('slot-' + i);
-        if (slot) { slot.innerText = chunk; slot.classList.add('filled'); slot.classList.remove('hint-text-slot'); }
-      });
-      const wb = document.getElementById('word-bank');
-      if (wb) wb.style.display = 'none';
-    }
+    const expHtml=`
+      <span style="color:#7f8c8d;font-weight:600;">📝 Original:</span> ${q.original_expr||'(student expression)'}<br>
+      <span style="color:#2980b9;font-weight:700;">✨ Polished:</span> ${q.answer}
+      <span class="why-block">💡 Why: ${whyText}</span>`;
 
-    /* feedback */
-    const fb = document.getElementById('feedback');
-    fb.style.display = 'block';
-    fb.className = res.isCorrect ? 'feedback correct' : 'feedback wrong';
-
-    let expHtml = `<span style="color:#7f8c8d;font-weight:600;">📝 Original:</span> ${q.original_expr || 'N/A'}<br>`;
-    expHtml    += `<span style="color:#2980b9;font-weight:700;">✨ Polished:</span> ${q.answer}<br>`;
-    expHtml    += `<span style="color:#e74c3c;display:block;margin-top:6px;">💡 Why: ${q.why_explanation || ''}</span>`;
-
-    fb.innerHTML = (res.isCorrect ? '<strong>✅ Perfect!</strong>' : `<strong>💪 정답:</strong> ${q.answer}`) +
+    const fb=document.getElementById('feedback');
+    fb.style.display='block';
+    fb.className=res.isCorrect?'feedback correct':'feedback wrong';
+    fb.innerHTML=(res.isCorrect?'<strong>✅ Perfect!</strong>':`<strong>💪 정답:</strong> ${q.answer}`)+
       `<details class="hint-details" open>
-        <summary>💡 Review Note (Click to toggle)</summary>
+        <summary>💡 Review Note (click to toggle)</summary>
         <div class="explanation">${expHtml}</div>
       </details>`;
 
-    /* next button */
-    const btn = document.getElementById('btn');
-    btn.innerText = currentIdx < questions.length - 1 ? 'Next →' : 'Finish 🎉';
-    btn.onclick = () => {
-      playClick();
-      currentIdx++;
-      if (currentIdx < questions.length) renderCard();
-      else finish();
-    };
+    const btn=document.getElementById('btn');
+    btn.innerText=currentIdx<questions.length-1?'Next →':'Finish 🎉';
+    btn.onclick=()=>{ playClick(); currentIdx++; currentIdx<questions.length?renderCard():finish(); };
   }
 
   /* =========================================================
-     MIC / SPEECH RECOGNITION
+     MIC — 실시간 transcript 표시
   ========================================================= */
-  function startSpeaking() {
+  function startSpeaking(){
     playClick();
-    if (!recognition || isAnswerSubmitted) return;
-    const micBtn = document.getElementById('mic-btn');
-    micBtn.classList.add('listening');
-    micBtn.innerHTML = '🎙️ Listening...';
-    recognition.lang = 'en-US';
-    try { recognition.start(); } catch(e) { micBtn.classList.remove('listening'); micBtn.innerHTML = '🎙️ Error – tap again'; return; }
+    if(!recognition||isAnswerSubmitted) return;
+    const micBtn=document.getElementById('mic-btn');
+    const tBox=document.getElementById('transcript-box');
+    const tText=document.getElementById('transcript-text');
 
-    recognition.onresult = (e) => {
-      const spoken = e.results[0][0].transcript;
-      micBtn.classList.remove('listening');
-      micBtn.innerHTML = '🎙️ Speak Answer';
+    micBtn.classList.add('listening'); micBtn.innerHTML='🎙️ Listening...';
+    if(tBox){ tBox.classList.add('show'); }
+    if(tText) tText.innerText='...';
 
-      const q = questions[currentIdx];
-      const spokenWords = normalizeText(spoken).split(' ');
-      const targetWords = normalizeText(q.answer).split(' ');
-      const matchCount  = targetWords.filter(w => spokenWords.includes(w)).length;
+    try{ recognition.start(); }catch(e){
+      micBtn.classList.remove('listening'); micBtn.innerHTML='🎙️ Error – tap again';
+      if(tBox) tBox.classList.remove('show'); return;
+    }
 
-      if (matchCount / targetWords.length >= 0.65) {
-        /* fill slots with correct answer and submit */
-        const chunks = q.chunked_answer || q.answer.split(' ');
-        chunks.forEach((c, i) => {
-          const slot = document.getElementById('slot-' + i);
-          if (slot) { slot.innerText = c; slot.classList.add('filled'); slot.classList.remove('hint-text-slot'); }
-        });
-        submitAnswer();
-      } else {
-        playOof();
-        showInlineError('Oof! I heard: "' + spoken + '"');
-        setTimeout(() => { if (!isAnswerSubmitted) submitAnswer(); }, 1800);
+    /* ★ interim 결과 실시간으로 화면에 표시 */
+    recognition.onresult=(e)=>{
+      let interim='', finalText='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        if(e.results[i].isFinal) finalText+=e.results[i][0].transcript;
+        else interim+=e.results[i][0].transcript;
+      }
+      /* 실시간으로 인식 중인 텍스트 보여주기 */
+      if(tText) tText.innerText=finalText||interim||'...';
+
+      if(finalText){
+        micBtn.classList.remove('listening'); micBtn.innerHTML='🎙️ Speak Answer';
+        const q=questions[currentIdx];
+        const spoken=normalizeText(finalText).split(' ');
+        const target=normalizeText(q.answer).split(' ');
+        const match=target.filter(w=>spoken.includes(w)).length;
+
+        if(match/target.length>=0.65){
+          const chunks=Array.isArray(q.chunked_answer)?q.chunked_answer:q.answer.split(' ');
+          chunks.forEach((c,i)=>{ const s=document.getElementById('slot-'+i); if(s){s.innerText=c;s.classList.add('filled');s.classList.remove('hint-slot');} });
+          submitAnswer();
+        } else {
+          playOof();
+          showInlineError(`Hmm, I heard: "${finalText}" — try again or submit`);
+        }
       }
     };
-    recognition.onerror = () => {
-      micBtn.classList.remove('listening');
-      micBtn.innerHTML = '🎙️ Error – tap again';
+    recognition.onerror=(e)=>{
+      micBtn.classList.remove('listening'); micBtn.innerHTML='🎙️ Error – tap again';
+      if(tBox) tBox.classList.remove('show');
+      if(tText) tText.innerText='Error: '+e.error;
     };
-    recognition.onend = () => {
-      if (!isAnswerSubmitted) { micBtn.classList.remove('listening'); micBtn.innerHTML = '🎙️ Speak Answer'; }
+    recognition.onend=()=>{
+      if(!isAnswerSubmitted){ micBtn.classList.remove('listening'); micBtn.innerHTML='🎙️ Speak Answer'; }
     };
   }
 
-  /* =========================================================
-     FINISH
-  ========================================================= */
-  function finish() {
-    const valid      = finalResults.filter(Boolean);
-    const correctCnt = valid.filter(r => r.isCorrect).length;
-
-    document.getElementById('title').innerText = '🎉 Mission Clear!';
-    document.getElementById('main-content').innerHTML = `
+  /* ── Finish ── */
+  function finish(){
+    const valid=finalResults.filter(Boolean), correct=valid.filter(r=>r.isCorrect).length;
+    document.getElementById('title').innerText='🎉 Mission Clear!';
+    document.getElementById('main-content').innerHTML=`
       <h2 style="text-align:center;">Great job, ${student}! 🎊</h2>
-      <h3 style="text-align:center;">Score: ${correctCnt} / ${questions.length}</h3>
-      <p style="text-align:center;color:#7f8c8d;font-size:13px;">Saving results & analyzing weaknesses... ⏳</p>
-      <button id="complete-btn" class="submit-btn" style="margin-top:25px;width:100%;opacity:0.5;" disabled>Please wait...</button>
-    `;
+      <h3 style="text-align:center;">Score: ${correct} / ${questions.length}</h3>
+      <p style="text-align:center;color:#7f8c8d;font-size:13px;">Saving & analyzing... ⏳</p>
+      <button id="complete-btn" class="submit-btn" style="margin-top:25px;width:100%;opacity:0.5;" disabled>Please wait...</button>`;
 
-    fetch(API_URL + "?action=saveResult&name=" + encodeURIComponent(student), {
-      method: 'POST',
-      body: JSON.stringify(valid),
-    })
-    .then(() => {
-      const btn = document.getElementById('complete-btn');
-      btn.innerText  = '✅ Complete Session';
-      btn.style.opacity = '1';
-      btn.disabled   = false;
-      btn.onclick    = () => window.close();
-    })
-    .catch(() => {
-      const btn = document.getElementById('complete-btn');
-      btn.innerText  = '⚠️ Save failed – Close anyway';
-      btn.style.opacity = '1';
-      btn.disabled   = false;
-      btn.onclick    = () => window.close();
-    });
+    fetch(API_URL+'?action=saveResult&name='+encodeURIComponent(student),{method:'POST',body:JSON.stringify(valid)})
+      .then(()=>{ const b=document.getElementById('complete-btn'); b.innerText='✅ Complete Session'; b.style.opacity='1'; b.disabled=false; b.onclick=()=>window.close(); })
+      .catch(()=>{ const b=document.getElementById('complete-btn'); b.innerText='⚠️ Save failed – Close anyway'; b.style.opacity='1'; b.disabled=false; b.onclick=()=>window.close(); });
   }
 </script>
 </body>
