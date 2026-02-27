@@ -224,79 +224,33 @@
   }
 
   /* ── Audio ── */
-  function toggleAudio(autoTimer){
-    playClick();
-    const synth=window.speechSynthesis;
-    const btn=document.getElementById('audio-btn');
-    if(!synth){
-      alert('이 브라우저는 음성 합성을 지원하지 않습니다.');
-      return;
-    }
-    if(isPlayingAudio || synth.speaking){
-      synth.cancel();
-      isPlayingAudio=false;
-      btn.innerHTML=isOPICMode?"▶️ Play Ava's Question":"▶️ Listen Dialogue";
-      btn.classList.remove('playing');
-      clearInterval(timerInterval);
-      return;
-    }
-    if(!voices || voices.length===0){
-      alert('음성 로딩 중입니다. 1~2초 후 다시 눌러주세요.');
-      // 강제 재시도
-      loadVoicesOnce();
-      return;
-    }
-
-    btn.innerHTML='⏹️ Stop';
-    btn.classList.add('playing');
-    isPlayingAudio=true;
-
-    const q=questions[currentIdx];
-    const voiceA=pickVoice(q.coworker_gender==='female') || voices[0];
-    const voiceB=pickVoice(q.student_gender==='female')  || voices[0];
-
-    const clean=s=>(s||'')
-      .replace(/^[^:]+:\s*/,'')
-      .replace(/[*_~\[\]]/g,'')
-      .replace(/\[BLANK\]/gi,'blank')
-      .trim();
-
-    const spokenA = clean(q.speaker_a);
-    // 학생 B는 항상 완성 문장 기반으로 TTS (정답 or gapped_b+answer)
-    let spokenB;
-    if (finalResults[currentIdx]) {
-      spokenB = clean(q.answer);
-    } else {
-      // [BLANK]가 있는 경우 answer를 채워넣은 버전
-      const base = (q.gapped_b || '').replace(/\[BLANK\]/gi, q.answer || '');
-      spokenB = clean(base || q.answer);
-    }
-
-    const uA=new SpeechSynthesisUtterance(spokenA);
-    uA.voice=voiceA; uA.rate=0.92; uA.pitch=1;
-
-    const uB=new SpeechSynthesisUtterance(spokenB);
-    uB.voice=voiceB; uB.rate=0.92; uB.pitch=1;
-
-    const reset=()=>{
-      btn.innerHTML=isOPICMode?"▶️ Play Ava's Question":"▶️ Listen Dialogue";
-      btn.classList.remove('playing');
-      isPlayingAudio=false;
-    };
-
-    uB.onend=()=>{
-      reset();
-      if(autoTimer && isOPICMode && !finalResults[currentIdx]) startOPIcTimer();
-    };
-    uB.onerror=reset;
-    uA.onerror=reset;
-    uA.onend=()=>{
-      if(isPlayingAudio) setTimeout(()=>synth.speak(uB),400);
-    };
-
-    synth.speak(uA);
+  /* ── Audio (목소리 깨짐 완전 복구) ── */
+function toggleAudio(autoTimer){
+  playClick();
+  const synth=window.speechSynthesis, btn=document.getElementById('audio-btn');
+  if(isPlayingAudio||synth.speaking){
+    synth.cancel(); isPlayingAudio=false;
+    btn.innerHTML=isOPICMode?"▶️ Play Ava's Question":"▶️ Listen Dialogue";
+    btn.classList.remove('playing'); clearInterval(timerInterval); return;
   }
+  if(!synth||voices.length===0){ alert('음성 로딩 중. 잠시 후 다시 눌러주세요.'); return; }
+  btn.innerHTML='⏹️ Stop'; btn.classList.add('playing'); isPlayingAudio=true;
 
+  const q=questions[currentIdx];
+  const voiceA=pickVoice(q.coworker_gender==='female');
+  const voiceB=pickVoice(q.student_gender==='female');
+  const clean=s=>(s||'').replace(/^[^:]+:\s*/,'').replace(/[*_~\[\]]/g,'').replace(/\[BLANK\]/gi,'blank').trim();
+
+  // ★ 문제의 원인이었던 pitch 조작을 제거하고 1.0(정상 목소리)으로 고정했습니다.
+  const uA=new SpeechSynthesisUtterance(clean(q.speaker_a)); uA.voice=voiceA; uA.rate=0.92; uA.pitch=1.0; 
+  const uB=new SpeechSynthesisUtterance(clean(finalResults[currentIdx]?q.answer:q.gapped_b)); uB.voice=voiceB; uB.rate=0.92; uB.pitch=1.0;
+  
+  const reset=()=>{ btn.innerHTML=isOPICMode?"▶️ Play Ava's Question":"▶️ Listen Dialogue"; btn.classList.remove('playing'); isPlayingAudio=false; };
+  uB.onend=()=>{ reset(); if(autoTimer&&isOPICMode&&!finalResults[currentIdx]) startOPIcTimer(); };
+  uB.onerror=reset; uA.onerror=reset;
+  uA.onend=()=>{ if(isPlayingAudio) setTimeout(()=>synth.speak(uB),400); };
+  synth.speak(uA);
+}
   function startOPIcTimer(){
     const bar=document.getElementById('timer-bar'),
           fill=document.getElementById('timer-fill'),
@@ -678,6 +632,7 @@
   }
 
   /* ── MIC (모바일/사파리 튕김 방지 최적화 및 에러 추적 팝업 적용) ── */
+/* ── MIC (모바일/사파리 튕김 방지 최적화 및 에러 추적 팝업 적용) ── */
 function startMic(){
   playClick();
   if(isAnswerSubmitted) return;
@@ -760,7 +715,6 @@ function startMic(){
     alert('마이크를 켤 수 없습니다. 페이지를 새로고침 해주세요.'); 
   }
 }
-
   /* ── Finish ── */
   function finish(){
     const valid=finalResults.filter(Boolean);
