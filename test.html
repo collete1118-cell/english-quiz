@@ -104,12 +104,16 @@ fetch(API_URL + "?action=getData&name=" + encodeURIComponent(student))
     clearInterval(pctTimer);
     const el = document.getElementById('pct');
     if (el) el.innerText = "100%";
-    if (!Array.isArray(data) || data.error) {
+    if (!Array.isArray(data) || (data.error && typeof data.error === 'string')) {
       document.getElementById('content').innerHTML = '<div style="color:red;padding:20px;text-align:center;font-weight:700;">❌ ' + (data.error || "데이터 오류") + '</div>';
       return;
     }
     questions = data;
-    setTimeout(render, 400);
+    setTimeout(function() {
+  try { render(); } catch(e) { 
+    document.getElementById('content').innerHTML = '<div style="color:red;padding:20px;">렌더 오류: '+e.message+'</div>'; 
+  }
+}, 400);
   })
   .catch(err => {
     clearInterval(pctTimer);
