@@ -30,23 +30,23 @@
     .bubble { background: #f1f2f6; padding: 14px 16px; border-radius: 18px; font-size: 14.5px; line-height: 1.6; color: #2c3e50; max-width: calc(100% - 95px); }
     .chat-row.b .bubble { background: #eef2f7; border: 2px solid #3498db; font-weight: 600; }
     .slot-group { display: inline-flex; flex-wrap: wrap; gap: 5px; vertical-align: middle; }
-    .slot { padding: 4px 10px; border: 2px dashed #bdc3c7; border-radius: 8px; min-width: 36px; min-height: 28px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; color: #2c3e50; cursor: pointer; background: white; font-size: 14px; position: relative; }
+    .slot { padding: 5px 12px; border: 2px dashed #bdc3c7; border-radius: 8px; min-width: 40px; min-height: 30px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; color: #2c3e50; cursor: pointer; background: white; font-size: 14px; position: relative; }
     .slot.filled { border-style: solid; border-color: #3498db; background: #eef2f7; }
-    .slot-hint { position: absolute; top: -8px; left: 4px; font-size: 10px; color: #e74c3c; font-weight: 800; background: white; padding: 0 2px; }
+    .slot-hint { position: absolute; top: -9px; left: 4px; font-size: 10px; color: #e74c3c; font-weight: 800; background: white; padding: 0 2px; line-height: 1; }
     .word-bank { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 15px; justify-content: center; }
-    .word-btn { background: white; border: 2px solid #3498db; color: #3498db; padding: 8px 15px; border-radius: 14px; font-weight: 700; cursor: pointer; font-size: 14px; transition: 0.15s; }
+    .word-btn { background: white; border: 2px solid #3498db; color: #3498db; padding: 9px 16px; border-radius: 14px; font-weight: 700; cursor: pointer; font-size: 14px; transition: 0.15s; }
     .word-btn:hover { background: #3498db; color: white; }
-    .word-btn.used { opacity: 0.3; pointer-events: none; }
+    .word-btn.used { opacity: 0.25; pointer-events: none; }
     .mcq-btn { width: 100%; text-align: left; padding: 14px 16px; background: white; border: 2px solid #e8ecf0; border-radius: 12px; font-size: 14px; font-weight: 600; color: #34495e; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
     .mcq-btn:hover { border-color: #3498db; }
     .mcq-btn.selected { background: #3498db; color: white; border-color: #3498db; }
-    .mic-section { margin-top: 12px; }
+    .mic-section { margin-top: 14px; }
     .mic-info { text-align: center; color: #e74c3c; font-size: 13px; font-weight: 700; background: #fdedec; padding: 10px; border-radius: 8px; margin-bottom: 8px; }
-    .mic-btn { width: 100%; padding: 15px; background: #e74c3c; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .mic-btn { width: 100%; padding: 15px; background: #e74c3c; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .mic-btn.listening { background: #c0392b; animation: pulse 1s infinite; }
-    .mic-result { background: #fff3cd; border: 1px solid #ffc107; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 8px; display: none; }
+    .mic-result { background: #fff3cd; border: 1px solid #ffc107; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 8px; display: none; line-height: 1.5; }
     .mic-submit-btn { width: 100%; padding: 12px; background: #8e44ad; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px; display: none; }
-    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
     .error-box { background: #fdedec; color: #e74c3c; padding: 10px 14px; border-radius: 8px; font-weight: 700; font-size: 13px; margin-top: 12px; display: none; }
     .feedback { margin-top: 18px; padding: 18px; border-radius: 12px; font-size: 14px; line-height: 1.6; display: none; }
     .feedback.correct { background: #e8f8f5; color: #1abc9c; border: 1px solid #1abc9c; }
@@ -70,90 +70,95 @@
     </div>
   </div>
 </div>
-
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbxr2-JUh8aQnh7zkygYpZwoquVgwYzoA6CgDxhyrbK8ib0-sh7v_Wk7d2N1VB2mwX2g/exec";
 const params = new URLSearchParams(window.location.search);
 const student = params.get('name') || '은영';
+let questions=[], idx=0, results=[];
+let chunks=[], mcqSelected="", audioPlaying=false;
 
-let questions = [], idx = 0, results = [];
-let voices = [], audioPlaying = false;
-let chunks = [], mcqSelected = "";
-
-// TTS 음성 로드
+// ★ TTS - 자연스러운 목소리 강제 선택
+let ttsVoices = [];
 function loadVoices() {
-  voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+  const all = speechSynthesis.getVoices();
+  // 크롬 자연음성 우선순위
+  ttsVoices = all.filter(v => v.lang.startsWith('en'));
 }
 if (window.speechSynthesis) {
   loadVoices();
   speechSynthesis.onvoiceschanged = loadVoices;
 }
+function pickVoice(prefer) {
+  const all = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+  if (!all.length) return null;
+  // ★ 구글 온라인 자연음성 최우선 (크롬에서 자동 제공)
+  const googleUS = all.find(v => v.name === 'Google US English');
+  const googleUK = all.find(v => v.name === 'Google UK English Female' || v.name === 'Google UK English Male');
+  const googleFemale = all.find(v => v.name === 'Google UK English Female');
+  const googleMale = all.find(v => v.name === 'Google UK English Male');
+  const anyGoogle = all.find(v => v.name.startsWith('Google'));
+  if (prefer === 'female') return googleFemale || googleUS || anyGoogle || all[0];
+  return googleMale || googleUS || anyGoogle || all[all.length-1];
+}
 
 // 로딩 바
-let pct = 0;
-const pctTimer = setInterval(() => {
-  pct = Math.min(pct + (pct < 80 ? Math.random()*8+2 : 1), 95);
-  const el = document.getElementById('pct');
-  if (el) el.innerText = Math.round(pct) + "%";
-}, 300);
+let pct=0;
+const pctTimer = setInterval(()=>{
+  pct = Math.min(pct+(pct<80?Math.random()*8+2:1),95);
+  const el=document.getElementById('pct');
+  if(el) el.innerText=Math.round(pct)+"%";
+},300);
 
-// 데이터 로드
-fetch(API_URL + "?action=getData&name=" + encodeURIComponent(student))
-  .then(r => r.json())
-  .then(data => {
+fetch(API_URL+"?action=getData&name="+encodeURIComponent(student))
+  .then(r=>r.json())
+  .then(data=>{
     clearInterval(pctTimer);
-    const el = document.getElementById('pct');
-    if (el) el.innerText = "100%";
-    if (!Array.isArray(data) || (data.error && typeof data.error === 'string')) {
-      document.getElementById('content').innerHTML = '<div style="color:red;padding:20px;text-align:center;font-weight:700;">❌ ' + (data.error || "데이터 오류") + '</div>';
+    const el=document.getElementById('pct');
+    if(el) el.innerText="100%";
+    if(!Array.isArray(data)){
+      document.getElementById('content').innerHTML='<div style="color:red;padding:20px;text-align:center;font-weight:700;">❌ '+(data.error||JSON.stringify(data))+'</div>';
       return;
     }
-    questions = data;
-    setTimeout(function() {
-  try { render(); } catch(e) { 
-    document.getElementById('content').innerHTML = '<div style="color:red;padding:20px;">렌더 오류: '+e.message+'</div>'; 
-  }
-}, 400);
+    questions=data;
+    setTimeout(render,400);
   })
-  .catch(err => {
+  .catch(err=>{
     clearInterval(pctTimer);
-    document.getElementById('content').innerHTML = '<div style="color:red;padding:20px;text-align:center;">네트워크 오류<br>' + err + '</div>';
+    document.getElementById('content').innerHTML='<div style="color:red;padding:20px;text-align:center;">네트워크 오류<br>'+err+'</div>';
   });
 
-// 폭죽
-function confetti() {
-  ['🎉','✨','👏','💯','🔥','🌟'].forEach((e, i) => {
-    for (let j = 0; j < 5; j++) {
-      const d = document.createElement('div');
-      d.innerText = e;
-      d.style.cssText = 'position:fixed;left:'+(Math.random()*100)+'vw;top:-40px;font-size:'+(Math.random()*18+18)+'px;z-index:9999;pointer-events:none;transition:top 1.8s ease-in,opacity 1.8s';
+function confetti(){
+  ['🎉','✨','👏','💯','🔥','🌟'].forEach((e,i)=>{
+    for(let j=0;j<5;j++){
+      const d=document.createElement('div');
+      d.innerText=e;
+      d.style.cssText='position:fixed;left:'+(Math.random()*100)+'vw;top:-40px;font-size:'+(Math.random()*18+18)+'px;z-index:9999;pointer-events:none;transition:top 1.8s ease-in,opacity 1.8s';
       document.body.appendChild(d);
-      setTimeout(() => { d.style.top = '110vh'; d.style.opacity = '0'; }, 50 + i*30);
-      setTimeout(() => d.remove(), 2000);
+      setTimeout(()=>{d.style.top='110vh';d.style.opacity='0';},50+i*30);
+      setTimeout(()=>d.remove(),2000);
     }
   });
 }
 
 // SVG 아바타
-const EMOTIONS = {
-  curious:   {bY:-2,bAL:0,bAR:-20,eO:1.1,mT:'o'},
-  worried:   {bY:1,bAL:-15,bAR:15,eO:0.8,mT:'sad'},
-  happy:     {bY:-2,bAL:-5,bAR:5,eO:1.0,mT:'smile',blush:true},
-  focused:   {bY:3,bAL:15,bAR:-15,eO:0.85,mT:'firm'},
-  serious:   {bY:2,bAL:5,bAR:-5,eO:0.9,mT:'firm'},
-  urgent:    {bY:2,bAL:25,bAR:-25,eO:1.2,mT:'wavy',sweat:true},
-  exhausted: {bY:0,bAL:0,bAR:0,eO:0.3,mT:'flat',bags:true},
-  proud:     {bY:-2,bAL:-5,bAR:5,eO:1.0,mT:'bigSmile'},
-  resigned:  {bY:-2,bAL:-15,bAR:15,eO:0.5,mT:'flat',bags:true}
+const EMOTIONS={
+  curious:{bY:-2,bAL:0,bAR:-20,eO:1.1,mT:'o'},
+  worried:{bY:1,bAL:-15,bAR:15,eO:0.8,mT:'sad'},
+  happy:{bY:-2,bAL:-5,bAR:5,eO:1.0,mT:'smile',blush:true},
+  focused:{bY:3,bAL:15,bAR:-15,eO:0.85,mT:'firm'},
+  serious:{bY:2,bAL:5,bAR:-5,eO:0.9,mT:'firm'},
+  urgent:{bY:2,bAL:25,bAR:-25,eO:1.2,mT:'wavy',sweat:true},
+  exhausted:{bY:0,bAL:0,bAR:0,eO:0.3,mT:'flat',bags:true},
+  proud:{bY:-2,bAL:-5,bAR:5,eO:1.0,mT:'bigSmile'},
+  resigned:{bY:-2,bAL:-15,bAR:15,eO:0.5,mT:'flat',bags:true}
 };
-const EMO_MAP = {neutral:'serious',relieved:'happy',glad:'happy',angry:'urgent',sad:'resigned',blank:'serious'};
-function emo(raw) { const c=(raw||'').toLowerCase().replace(/[^a-z]/g,''); return EMO_MAP[c]||(EMOTIONS[c]?c:'serious'); }
-
-function buildSVG(gender, emotion) {
-  const F = gender==='female';
-  const E = EMOTIONS[emo(emotion)] || EMOTIONS.serious;
-  const skin=F?'#ffe0bd':'#f1c27d', hair='#2c3e50', suit='#1a252f';
-  const bY=E.bY||0, bAL=E.bAL||0, bAR=E.bAR||0, eO=E.eO||1;
+const EMO_MAP={neutral:'serious',relieved:'happy',glad:'happy',angry:'urgent',sad:'resigned',blank:'serious'};
+function emo(raw){const c=(raw||'').toLowerCase().replace(/[^a-z]/g,'');return EMO_MAP[c]||(EMOTIONS[c]?c:'serious');}
+function buildSVG(gender,emotion){
+  const F=gender==='female';
+  const E=EMOTIONS[emo(emotion)]||EMOTIONS.serious;
+  const skin=F?'#ffe0bd':'#f1c27d',hair='#2c3e50',suit='#1a252f';
+  const bY=E.bY||0,bAL=E.bAL||0,bAR=E.bAR||0,eO=E.eO||1;
   let mouth='';
   if(E.mT==='flat') mouth='<line x1="44" y1="70" x2="56" y2="70" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>';
   if(E.mT==='firm') mouth='<line x1="40" y1="70" x2="60" y2="70" stroke="#333" stroke-width="3" stroke-linecap="round"/>';
@@ -162,375 +167,365 @@ function buildSVG(gender, emotion) {
   if(E.mT==='bigSmile') mouth='<path d="M42,68 Q50,80 58,68 Z" fill="#fff" stroke="#333" stroke-width="2"/>';
   if(E.mT==='o') mouth='<circle cx="50" cy="72" r="4" fill="#333"/>';
   if(E.mT==='wavy') mouth='<path d="M42,72 Q46,68 50,72 Q54,76 58,72" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
-  const extras =
-    (E.blush?'<ellipse cx="35" cy="58" rx="6" ry="3" fill="#e74c3c" opacity="0.25"/><ellipse cx="65" cy="58" rx="6" ry="3" fill="#e74c3c" opacity="0.25"/>':'') +
-    (E.sweat?'<ellipse cx="15" cy="42" rx="3" ry="5" fill="#3498db" opacity="0.7"/><ellipse cx="85" cy="42" rx="3" ry="5" fill="#3498db" opacity="0.7"/>':'') +
+  const extras=
+    (E.blush?'<ellipse cx="35" cy="58" rx="6" ry="3" fill="#e74c3c" opacity="0.25"/><ellipse cx="65" cy="58" rx="6" ry="3" fill="#e74c3c" opacity="0.25"/>':'')+
+    (E.sweat?'<ellipse cx="15" cy="42" rx="3" ry="5" fill="#3498db" opacity="0.7"/><ellipse cx="85" cy="42" rx="3" ry="5" fill="#3498db" opacity="0.7"/>':'')+
     (E.bags?'<path d="M32,58 Q38,62 44,58 M56,58 Q62,62 68,58" stroke="#333" stroke-width="1.5" fill="none" opacity="0.35"/>':'');
-  const hairSVG = F
-    ? '<path d="M20,80 Q20,10 50,10 Q80,10 80,80 Q85,90 75,90 L75,50 Q50,20 25,50 L25,90 Q15,90 20,80 Z" fill="'+hair+'"/>'
-    : '<path d="M23,50 Q23,10 50,10 Q77,10 77,50 Q77,30 50,25 Q23,30 23,50 Z" fill="'+hair+'"/><rect x="23" y="45" width="6" height="15" rx="3" fill="'+hair+'"/><rect x="71" y="45" width="6" height="15" rx="3" fill="'+hair+'"/>';
-  return '<svg viewBox="0 0 100 100" width="100%" height="100%">' +
-    '<path d="M10,120 Q50,75 90,120 Z" fill="'+suit+'"/><path d="M35,120 L50,85 L65,120 Z" fill="white"/>' +
-    (F?'':'<polygon points="46,105 42,120 58,120 54,105" fill="#c0392b"/>') +
-    '<rect x="42" y="75" width="16" height="20" fill="'+skin+'"/>' +
-    '<rect x="25" y="25" width="50" height="60" rx="25" fill="'+skin+'"/>' +
-    hairSVG +
-    '<ellipse cx="38" cy="50" rx="4" ry="'+(4*eO)+'" fill="#111"/>' +
-    '<ellipse cx="62" cy="50" rx="4" ry="'+(4*eO)+'" fill="#111"/>' +
-    '<line x1="30" y1="'+(42+bY)+'" x2="45" y2="'+(42+bY)+'" stroke="#333" stroke-width="3" stroke-linecap="round" transform="rotate('+bAL+',37.5,42)"/>' +
-    '<line x1="55" y1="'+(42+bY)+'" x2="70" y2="'+(42+bY)+'" stroke="#333" stroke-width="3" stroke-linecap="round" transform="rotate('+bAR+',62.5,42)"/>' +
-    mouth + extras + '</svg>';
+  const hairSVG=F
+    ?'<path d="M20,80 Q20,10 50,10 Q80,10 80,80 Q85,90 75,90 L75,50 Q50,20 25,50 L25,90 Q15,90 20,80 Z" fill="'+hair+'"/>'
+    :'<path d="M23,50 Q23,10 50,10 Q77,10 77,50 Q77,30 50,25 Q23,30 23,50 Z" fill="'+hair+'"/><rect x="23" y="45" width="6" height="15" rx="3" fill="'+hair+'"/><rect x="71" y="45" width="6" height="15" rx="3" fill="'+hair+'"/>';
+  return '<svg viewBox="0 0 100 100" width="100%" height="100%">'+
+    '<path d="M10,120 Q50,75 90,120 Z" fill="'+suit+'"/><path d="M35,120 L50,85 L65,120 Z" fill="white"/>'+
+    (F?'':'<polygon points="46,105 42,120 58,120 54,105" fill="#c0392b"/>')+
+    '<rect x="42" y="75" width="16" height="20" fill="'+skin+'"/>'+
+    '<rect x="25" y="25" width="50" height="60" rx="25" fill="'+skin+'"/>'+
+    hairSVG+
+    '<ellipse cx="38" cy="50" rx="4" ry="'+(4*eO)+'" fill="#111"/>'+
+    '<ellipse cx="62" cy="50" rx="4" ry="'+(4*eO)+'" fill="#111"/>'+
+    '<line x1="30" y1="'+(42+bY)+'" x2="45" y2="'+(42+bY)+'" stroke="#333" stroke-width="3" stroke-linecap="round" transform="rotate('+bAL+',37.5,42)"/>'+
+    '<line x1="55" y1="'+(42+bY)+'" x2="70" y2="'+(42+bY)+'" stroke="#333" stroke-width="3" stroke-linecap="round" transform="rotate('+bAR+',62.5,42)"/>'+
+    mouth+extras+'</svg>';
 }
 
-// TTS 재생
-function playAudio(answered) {
-  const btn = document.getElementById('audio-btn');
-  if (!btn) return;
-  if (audioPlaying || speechSynthesis.speaking) {
+// ★ TTS 재생
+function playAudio(answered){
+  const btn=document.getElementById('audio-btn');
+  if(!btn) return;
+  if(audioPlaying||speechSynthesis.speaking){
     speechSynthesis.cancel();
-    btn.className='audio-btn'; btn.innerText='▶️ 대화 듣기'; audioPlaying=false;
-    return;
+    btn.className='audio-btn';btn.innerText='▶️ 대화 듣기';audioPlaying=false;return;
   }
-  if (!voices.length) { loadVoices(); if(!voices.length) return; }
-  const q = questions[idx];
-  const tA = (q.speaker_a||'').replace(/\*\*/g,'').replace(/\[BLANK\]/g,'blank').replace(/^[^:]+:/,'').trim();
-  const tB = (answered ? q.full_b : q.gapped_b.replace(/\[BLANK\]/g,'blank')).replace(/\*\*/g,'').replace(/^[^:]+:/,'').trim();
+  const allV=speechSynthesis.getVoices().filter(v=>v.lang.startsWith('en'));
+  if(!allV.length) return;
+  const q=questions[idx];
+  const tA=(q.speaker_a||'').replace(/\*\*/g,'').replace(/\[BLANK\]/g,'blank').replace(/^[^:]+:\s*/,'').trim();
+  const tB=(answered?q.full_b:q.gapped_b.replace(/\[BLANK\]/g,'blank')).replace(/\*\*/g,'').replace(/^[^:]+:\s*/,'').trim();
 
-  // ★ 자연스러운 목소리 선택
-  const allVoices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
-  const femaleVoices = allVoices.filter(v => /female|woman|girl|samantha|victoria|karen|susan|moira/i.test(v.name));
-  const maleVoices = allVoices.filter(v => /male|man|daniel|alex|fred|thomas|oliver/i.test(v.name));
-  const vFemale = femaleVoices[0] || allVoices.find(v => v.name.includes('Samantha')) || allVoices[0];
-  const vMale = maleVoices[0] || allVoices.find(v => v.name.includes('Daniel')) || allVoices[allVoices.length-1];
+  // ★ 자연음성 강제선택
+  const vFemale = pickVoice('female');
+  const vMale = pickVoice('male');
+  const speakerBisFemale = q.student_gender==='female';
 
-  const uA = new SpeechSynthesisUtterance(tA);
-  const uB = new SpeechSynthesisUtterance(tB);
-  uA.voice = q.student_gender==='female' ? vMale : vFemale;
-  uB.voice = q.student_gender==='female' ? vFemale : vMale;
-  uA.rate = 0.9; uB.rate = 0.9;
-  uA.pitch = q.student_gender==='female' ? 0.9 : 1.1;
-  uB.pitch = q.student_gender==='female' ? 1.1 : 0.9;
+  const uA=new SpeechSynthesisUtterance(tA);
+  const uB=new SpeechSynthesisUtterance(tB);
+  uA.voice = speakerBisFemale ? vMale : vFemale;
+  uB.voice = speakerBisFemale ? vFemale : vMale;
+  uA.rate=0.88; uB.rate=0.88;
+  uA.pitch=1.0; uB.pitch=1.0;
 
-  btn.className='audio-btn playing'; btn.innerText='⏹️ 멈춤'; audioPlaying=true;
-  uB.onend = () => { btn.className='audio-btn'; btn.innerText='▶️ 대화 듣기'; audioPlaying=false; };
-  uA.onend = () => { if(audioPlaying) setTimeout(()=>speechSynthesis.speak(uB),400); };
+  btn.className='audio-btn playing';btn.innerText='⏹️ 멈춤';audioPlaying=true;
+  uB.onend=()=>{btn.className='audio-btn';btn.innerText='▶️ 대화 듣기';audioPlaying=false;};
+  uA.onend=()=>{if(audioPlaying) setTimeout(()=>speechSynthesis.speak(uB),400);};
   speechSynthesis.speak(uA);
 }
 
-// 메인 렌더
-function render() {
-  if (!questions.length) return;
-  const q = questions[idx];
-  const stage = q.stage || 1;
-  const isMCQ = q.type === "MCQ";
-  const stageColors = ['','#2ecc71','#f39c12','#e74c3c'];
-  const stageLabels = ['','Stage 1','Stage 2','Stage 3'];
+function render(){
+  if(!questions.length) return;
+  const q=questions[idx];
+  const stage=q.stage||1;
+  const isMCQ=q.type==="MCQ";
+  const stageColors=['','#2ecc71','#f39c12','#e74c3c'];
 
-  document.getElementById('title').innerHTML = 'Mission #'+(idx+1)+
-    ' <span style="background:'+stageColors[stage]+';color:white;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:800;margin-left:6px;vertical-align:middle;">'+stageLabels[stage]+'</span>';
+  document.getElementById('title').innerHTML='Mission #'+(idx+1)+
+    ' <span style="background:'+stageColors[stage]+';color:white;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:800;margin-left:6px;vertical-align:middle;">Stage '+stage+'</span>';
 
-  const gB = q.student_gender==='female' ? 'female' : 'male';
-  const gA = gB==='female' ? 'male' : 'female';
-  const svgA = buildSVG(gA, q.emotion_a||'curious');
-  const svgB = buildSVG(gB, q.emotion_b||'focused');
-  const fcA = gA==='female' ? 'female' : '';
-  const fcB = gB==='female' ? 'female' : '';
+  const gB=q.student_gender==='female'?'female':'male';
+  const gA=gB==='female'?'male':'female';
+  const svgA=buildSVG(gA,q.emotion_a||'curious');
+  const svgB=buildSVG(gB,q.emotion_b||'focused');
+  const fcA=gA==='female'?'female':'';
+  const fcB=gB==='female'?'female':'';
 
-  let cleanGapped = (q.gapped_b||'').replace(/\*\*/g,'').replace(/(\[BLANK\]\s*)+/g,'[BLANK]');
-  let interactiveHTML = '';
+  let cleanGapped=(q.gapped_b||'').replace(/\*\*/g,'').replace(/(\[BLANK\]\s*)+/g,'[BLANK]');
+  let interactiveHTML='';
 
-  if (!isMCQ) {
-    chunks = Array.isArray(q.chunks) && q.chunks.length > 0 ? q.chunks :
-      (q.answer||'').split(' ').map((w,i) => ({text:w, hint_letter: i===0 ? w[0] : null}));
-    const slotsHTML = '<div class="slot-group">' +
-      chunks.map((ch, i) => {
-        const hint = ch.hint_letter ? '<span class="slot-hint">'+ch.hint_letter+'</span>' : '';
-        return '<div class="slot" id="slot-'+i+'" data-idx="'+i+'" onclick="clearSlot(this)">'+hint+'</div>';
-      }).join('') + '</div>';
-    const shuffled = [...chunks].map((c,i) => ({...c, origIdx:i})).sort(() => Math.random()-0.5);
-    interactiveHTML = '<div class="word-bank">' +
-      shuffled.map(ch => '<button class="word-btn" id="wb-'+ch.origIdx+'" onclick="fillSlot(this,'+ch.origIdx+')">'+ch.text+'</button>').join('') +
+  if(!isMCQ){
+    // ★ chunks 검증 및 fallback
+    let rawChunks = Array.isArray(q.chunks) && q.chunks.length>0 ? q.chunks : [];
+    if(rawChunks.length===0){
+      // 단어별 fallback
+      rawChunks=(q.answer||'').split(' ').filter(w=>w.trim()).map((w,i)=>({text:w,hint_letter:i===0?w[0]:null}));
+    }
+    // hint_letter 없는 청크 보정
+    chunks=rawChunks.map((ch,i)=>({
+      text: ch.text||ch||'',
+      hint_letter: ch.hint_letter||null
+    }));
+
+    const slotsHTML='<div class="slot-group">'+
+      chunks.map((ch,i)=>{
+        const hint=ch.hint_letter?'<span class="slot-hint">'+ch.hint_letter+'</span>':'';
+        return '<div class="slot" id="slot-'+i+'" data-filled="" onclick="clearSlot(this)">'+hint+'</div>';
+      }).join('')+'</div>';
+
+    // ★ 단어뱅크 반드시 셔플
+    const shuffled=[...chunks].map((c,i)=>({...c,origIdx:i}));
+    // Fisher-Yates 셔플
+    for(let i=shuffled.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
+    }
+    interactiveHTML='<div class="word-bank">'+
+      shuffled.map(ch=>'<button class="word-btn" id="wb-'+ch.origIdx+'" onclick="fillSlot(this,'+ch.origIdx+')">'+ch.text+'</button>').join('')+
       '</div>';
-    cleanGapped = cleanGapped.replace(/\[BLANK\]/g, slotsHTML);
+    cleanGapped=cleanGapped.replace(/\[BLANK\]/g,slotsHTML);
   } else {
-    cleanGapped = cleanGapped.replace(/\[BLANK\]/g, '<span style="border-bottom:2px solid #3498db;padding:0 20px;">___</span>');
+    cleanGapped=cleanGapped.replace(/\[BLANK\]/g,'<span style="border-bottom:2px solid #3498db;padding:0 20px;display:inline-block;">___</span>');
   }
 
-  const prevBtn = idx > 0 ? '<button class="prev-btn" onclick="goPrev()">← 이전</button>' : '';
-
-  let html = '<div class="scenario-box"><div class="instruction">'+q.instruction+'</div><div class="scenario">💡 '+(q.scenario||'')+'</div></div>';
-  html += '<button id="audio-btn" class="audio-btn" onclick="playAudio(false)">▶️ 대화 듣기</button>';
-  html += '<div class="chat-wrap">';
-  html += '<div class="chat-row"><div class="avatar-wrap"><div class="avatar-svg '+fcA+'">'+svgA+'</div><div class="avatar-name">'+q.coworker_name+'</div></div><div class="bubble">'+(q.speaker_a||'').replace(/\*\*/g,'')+'</div></div>';
-  html += '<div class="chat-row b"><div class="avatar-wrap"><div class="avatar-svg '+fcB+'">'+svgB+'</div><div class="avatar-name">'+q.student_name+'</div></div><div class="bubble">'+cleanGapped+'</div></div>';
-  html += '</div>';
-
-  if (isMCQ) {
-    const opts = [q.answer,...(q.distractors||[])].filter(Boolean).sort(() => Math.random()-0.5);
-    html += '<div id="mcq-area">'+opts.map((o,i) => '<button class="mcq-btn" id="mcq-'+i+'" onclick="selectMCQ(this,\''+o.replace(/'/g,"\\'")+'\')">'+o+'</button>').join('')+'</div>';
+  const prevBtn=idx>0?'<button class="prev-btn" onclick="goPrev()">← 이전</button>':'';
+  let html='<div class="scenario-box"><div class="instruction">'+q.instruction+'</div><div class="scenario">💡 '+(q.scenario||'')+'</div></div>';
+  html+='<button id="audio-btn" class="audio-btn" onclick="playAudio(false)">▶️ 대화 듣기</button>';
+  html+='<div class="chat-wrap">';
+  html+='<div class="chat-row"><div class="avatar-wrap"><div class="avatar-svg '+fcA+'">'+svgA+'</div><div class="avatar-name">'+q.coworker_name+'</div></div><div class="bubble">'+(q.speaker_a||'').replace(/\*\*/g,'')+'</div></div>';
+  html+='<div class="chat-row b"><div class="avatar-wrap"><div class="avatar-svg '+fcB+'">'+svgB+'</div><div class="avatar-name">'+q.student_name+'</div></div><div class="bubble">'+cleanGapped+'</div></div>';
+  html+='</div>';
+  if(isMCQ){
+    const opts=[q.answer,...(q.distractors||[])].filter(Boolean);
+    // MCQ도 셔플
+    for(let i=opts.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[opts[i],opts[j]]=[opts[j],opts[i]];}
+    html+='<div id="mcq-area">'+opts.map((o,i)=>'<button class="mcq-btn" id="mcq-'+i+'" onclick="selectMCQ(this,\''+o.replace(/'/g,"\\'")+'\')">'+o+'</button>').join('')+'</div>';
   } else {
-    html += interactiveHTML;
-    html += '<div class="mic-section">';
-    html += '<div class="mic-info">🎙️ '+(q.isLow ? '빈칸 단어만 말해주세요!' : 'Speak ONLY the target words.')+'</div>';
-    html += '<button class="mic-btn" id="mic-btn" onclick="startMic()">🎙️ '+(q.isLow ? '마이크 켜기' : 'Speak Answer')+'</button>';
-    html += '<div class="mic-result" id="mic-result"></div>';
-    html += '<button class="mic-submit-btn" id="mic-submit" onclick="submitMicAnswer()">✅ 이 발음으로 정답 확인</button>';
-    html += '</div>';
+    html+=interactiveHTML;
+    html+='<div class="mic-section">';
+    html+='<div class="mic-info">🎙️ '+(q.isLow?'빈칸 단어만 말해주세요!':'Speak ONLY the target words.')+'</div>';
+    html+='<button class="mic-btn" id="mic-btn" onclick="startMic()">🎙️ '+(q.isLow?'마이크 켜기':'Speak Answer')+'</button>';
+    html+='<div class="mic-result" id="mic-result"></div>';
+    html+='<button class="mic-submit-btn" id="mic-submit" onclick="submitMicAnswer()">✅ 이 발음으로 정답 확인</button>';
+    html+='</div>';
   }
+  html+='<div class="error-box" id="err-box"></div>';
+  html+='<div class="feedback" id="feedback"></div>';
+  html+='<div class="btn-group">'+prevBtn+'<button class="next-btn" id="main-btn" onclick="checkAnswer('+(isMCQ)+')">정답 확인</button></div>';
 
-  html += '<div class="error-box" id="err-box"></div>';
-  html += '<div class="feedback" id="feedback"></div>';
-  html += '<div class="btn-group">'+prevBtn+'<button class="next-btn" id="main-btn" onclick="checkAnswer('+(isMCQ)+')">정답 확인</button></div>';
-
-  document.getElementById('content').innerHTML = html;
-  mcqSelected = '';
-  audioPlaying = false;
-
-  if (results[idx]) restoreResult();
+  document.getElementById('content').innerHTML=html;
+  mcqSelected='';audioPlaying=false;
+  if(results[idx]) restoreResult();
 }
 
-function restoreResult() {
-  const saved = results[idx];
-  if (!saved) return;
-  const q = questions[idx];
-  const fb = document.getElementById('feedback');
-  fb.className = 'feedback ' + (saved.isCorrect ? 'correct' : 'wrong');
-  fb.style.display = 'block';
-  fb.innerHTML = saved.isCorrect
-    ? '<strong>✅ Perfect!</strong><br><br>'+(q.full_b||'').replace(/\*\*/g,'')
-    : '<strong>💪 정답: </strong>'+q.answer+'<div class="feedback-note">'+(q.explanation||'')+'</div>';
-  ['mic-btn','mic-result','mic-submit'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
-  const btn = document.getElementById('main-btn');
-  btn.innerText = idx < questions.length-1 ? '다음 미션 >' : '결과 보기 🎯';
-  btn.onclick = () => { speechSynthesis.cancel(); idx < questions.length-1 ? (idx++, render()) : finish(); };
+function restoreResult(){
+  const saved=results[idx]; if(!saved) return;
+  const q=questions[idx];
+  const fb=document.getElementById('feedback');
+  fb.className='feedback '+(saved.isCorrect?'correct':'wrong');
+  fb.style.display='block';
+  fb.innerHTML=saved.isCorrect
+    ?'<strong>✅ Perfect!</strong><br><br>'+(q.full_b||'').replace(/\*\*/g,'')
+    :'<strong>💪 정답: </strong>'+q.answer+'<div class="feedback-note">'+(q.explanation||'')+'</div>';
+  ['mic-btn','mic-result','mic-submit'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  const btn=document.getElementById('main-btn');
+  btn.innerText=idx<questions.length-1?'다음 미션 >':'결과 보기 🎯';
+  btn.onclick=()=>{speechSynthesis.cancel();idx<questions.length-1?(idx++,render()):finish();};
 }
 
-function goPrev() {
-  speechSynthesis.cancel();
-  if (idx > 0) { idx--; render(); }
+function goPrev(){speechSynthesis.cancel();if(idx>0){idx--;render();}}
+
+function selectMCQ(btn,opt){
+  document.querySelectorAll('.mcq-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');mcqSelected=opt;
+  document.getElementById('err-box').style.display='none';
 }
 
-function selectMCQ(btn, opt) {
-  document.querySelectorAll('.mcq-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  mcqSelected = opt;
-  document.getElementById('err-box').style.display = 'none';
-}
-
-function fillSlot(btn, origIdx) {
-  const slots = document.querySelectorAll('.slot');
-  for (let s of slots) {
-    if (s.dataset.filled === '' || s.dataset.filled === undefined) {
-      const hintEl = s.querySelector('.slot-hint');
-      const hintHTML = hintEl ? hintEl.outerHTML : '';
-      s.innerHTML = hintHTML + chunks[origIdx].text;
-      s.dataset.filled = String(origIdx);
+function fillSlot(btn,origIdx){
+  const slots=document.querySelectorAll('.slot');
+  for(let s of slots){
+    if(s.dataset.filled===''){
+      const hintEl=s.querySelector('.slot-hint');
+      const hintHTML=hintEl?hintEl.outerHTML:'';
+      s.innerHTML=hintHTML+chunks[origIdx].text;
+      s.dataset.filled=String(origIdx);
       s.classList.add('filled');
       btn.classList.add('used');
-      document.getElementById('err-box').style.display = 'none';
+      document.getElementById('err-box').style.display='none';
       break;
     }
   }
 }
 
-function clearSlot(s) {
-  if (s.dataset.filled !== undefined && s.dataset.filled !== '') {
-    const origIdx = parseInt(s.dataset.filled);
-    const wb = document.getElementById('wb-'+origIdx);
-    if (wb) wb.classList.remove('used');
-    const hintEl = s.querySelector('.slot-hint');
-    const hintHTML = hintEl ? hintEl.outerHTML : '';
-    s.innerHTML = hintHTML;
-    s.dataset.filled = '';
+function clearSlot(s){
+  if(s.dataset.filled&&s.dataset.filled!==''){
+    const origIdx=parseInt(s.dataset.filled);
+    const wb=document.getElementById('wb-'+origIdx);
+    if(wb) wb.classList.remove('used');
+    const hintEl=s.querySelector('.slot-hint');
+    const hintHTML=hintEl?hintEl.outerHTML:'';
+    s.innerHTML=hintHTML;
+    s.dataset.filled='';
     s.classList.remove('filled');
   }
 }
 
-function showErr(msg) {
-  const e = document.getElementById('err-box');
-  e.innerText = '🚨 ' + msg;
-  e.style.display = 'block';
-}
+function showErr(msg){const e=document.getElementById('err-box');e.innerText='🚨 '+msg;e.style.display='block';}
 
-// ★★★ 마이크 - 매번 새로 생성하는 방식 (가장 안정적)
-function startMic() {
-  const micBtn = document.getElementById('mic-btn');
-  const micResult = document.getElementById('mic-result');
-  const micSubmit = document.getElementById('mic-submit');
+// ★★★ 마이크 - 완전 재작성 (no-speech 타임아웃 연장)
+function startMic(){
+  const micBtn=document.getElementById('mic-btn');
+  const micResult=document.getElementById('mic-result');
+  const micSubmit=document.getElementById('mic-submit');
+  const SRClass=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SRClass){showErr("Chrome 브라우저를 사용해주세요.");return;}
 
-  // 지원 여부 확인
-  const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SRClass) {
-    showErr("이 브라우저는 마이크를 지원하지 않아요. Chrome을 사용해주세요.");
-    return;
-  }
+  micBtn.className='mic-btn listening';
+  micBtn.innerHTML='🎙️ 듣고 있습니다...';
+  micResult.style.display='none';
+  micSubmit.style.display='none';
 
-  // UI 즉시 업데이트
-  micBtn.className = 'mic-btn listening';
-  micBtn.innerText = '🎙️ 듣고 있습니다...';
-  micResult.style.display = 'none';
-  micSubmit.style.display = 'none';
+  const rec=new SRClass();
+  rec.lang='en-US';
+  rec.continuous=false;
+  rec.interimResults=false;
+  rec.maxAlternatives=3; // ★ 여러 후보 받기
 
-  // ★ 매번 새 인스턴스 생성 (abort/재사용 문제 완전 해결)
-  const rec = new SRClass();
-  rec.lang = 'en-US';
-  rec.continuous = false;
-  rec.interimResults = false;
-  rec.maxAlternatives = 1;
+  let hasResult=false;
 
-  rec.onstart = function() {
-    micBtn.className = 'mic-btn listening';
-    micBtn.innerText = '🎙️ 듣고 있습니다...';
+  rec.onstart=function(){
+    micBtn.innerHTML='🎙️ 듣고 있습니다...';
   };
 
-  rec.onresult = function(event) {
-    const spoken = event.results[0][0].transcript;
-    const spokenClean = spoken.toLowerCase().replace(/[.,!?']/g,'').trim();
+  rec.onresult=function(event){
+    hasResult=true;
+    // ★ 가장 좋은 매칭 결과 선택
+    let bestSpoken='', bestMatch=0;
+    const q=questions[idx];
+    const targetWords=(q.answer||'').toLowerCase().replace(/[.,!?']/g,'').split(' ').filter(w=>w);
 
-    micBtn.className = 'mic-btn';
-    micBtn.innerText = '🎙️ 다시 말하기';
-    micResult.style.display = 'block';
-    micResult.innerHTML = '🗣️ 인식됨: <strong>"' + spoken + '"</strong>';
+    for(let ri=0;ri<event.results[0].length;ri++){
+      const sp=event.results[0][ri].transcript.toLowerCase().replace(/[.,!?']/g,'').trim();
+      let mc=0;
+      targetWords.forEach(w=>{if(sp.includes(w)) mc++;});
+      if(mc>bestMatch){bestMatch=mc;bestSpoken=sp;}
+    }
+    const spoken=event.results[0][0].transcript;
+    if(!bestSpoken) bestSpoken=spoken.toLowerCase().replace(/[.,!?']/g,'').trim();
 
-    const q = questions[idx];
-    const targetWords = (q.answer||'').toLowerCase().replace(/[.,!?']/g,'').trim().split(' ').filter(w=>w);
-    let matchCount = 0;
-    targetWords.forEach(w => { if (spokenClean.includes(w)) matchCount++; });
-    const matchRate = targetWords.length > 0 ? matchCount / targetWords.length : 0;
+    micBtn.className='mic-btn';
+    micBtn.innerHTML='🎙️ 다시 말하기';
+    micResult.style.display='block';
+    micResult.innerHTML='🗣️ 인식됨: <strong>"'+spoken+'"</strong>';
 
-    if (matchRate >= 0.85) {
+    const matchRate=targetWords.length>0?bestMatch/targetWords.length:0;
+
+    if(matchRate>=0.8){
       confetti();
       fillSlotsWithAnswer();
-      setTimeout(() => checkAnswer(false), 600);
+      setTimeout(()=>checkAnswer(false),600);
     } else {
-      micResult.innerHTML += '<br><span style="color:#e74c3c;font-size:12px;">다시 말하거나 아래 버튼을 누르세요.</span>';
-      micSubmit.style.display = 'block';
+      micResult.innerHTML+='<br><span style="color:#e74c3c;font-size:12px;">다시 말하거나 아래 버튼을 누르세요.</span>';
+      micSubmit.style.display='block';
     }
   };
 
-  rec.onerror = function(event) {
-    micBtn.className = 'mic-btn';
-    micBtn.innerText = '🎙️ 다시 말하기';
-    micResult.style.display = 'block';
-    if (event.error === 'no-speech') {
-      micResult.innerHTML = '⚠️ 소리가 인식되지 않았어요. 다시 탭하세요.';
-    } else if (event.error === 'not-allowed') {
-      micResult.innerHTML = '⚠️ 마이크 권한이 필요해요. 브라우저 설정에서 허용해주세요.';
+  rec.onerror=function(event){
+    micBtn.className='mic-btn';
+    micBtn.innerHTML='🎙️ 다시 말하기';
+    micResult.style.display='block';
+    if(event.error==='no-speech'){
+      micResult.innerHTML='⚠️ 소리가 감지되지 않았어요. 마이크에 가까이 대고 다시 탭하세요.';
+    } else if(event.error==='not-allowed'){
+      micResult.innerHTML='⚠️ 마이크 권한이 필요해요. 주소창 왼쪽 🔒를 눌러 마이크를 허용해주세요.';
+    } else if(event.error==='network'){
+      micResult.innerHTML='⚠️ 네트워크 오류. 인터넷 연결을 확인해주세요.';
     } else {
-      micResult.innerHTML = '⚠️ 오류: ' + event.error + ' - 다시 탭하세요';
+      micResult.innerHTML='⚠️ 오류: '+event.error+' - 다시 탭하세요';
     }
   };
 
-  rec.onend = function() {
-    if (micBtn.classList.contains('listening')) {
-      micBtn.className = 'mic-btn';
-      micBtn.innerText = '🎙️ 다시 말하기';
+  rec.onend=function(){
+    if(!hasResult){
+      micBtn.className='mic-btn';
+      micBtn.innerHTML='🎙️ 다시 말하기';
     }
   };
 
-  rec.start();
+  try { rec.start(); }
+  catch(e){
+    micBtn.className='mic-btn';
+    micBtn.innerHTML='🎙️ 다시 말하기';
+    micResult.style.display='block';
+    micResult.innerHTML='⚠️ 마이크 시작 실패: '+e.message;
+  }
 }
 
-function fillSlotsWithAnswer() {
-  const slots = document.querySelectorAll('.slot');
-  chunks.forEach((ch, i) => {
-    if (slots[i]) {
-      const hintEl = slots[i].querySelector('.slot-hint');
-      const hintHTML = hintEl ? hintEl.outerHTML : '';
-      slots[i].innerHTML = hintHTML + ch.text;
-      slots[i].dataset.filled = String(i);
+function fillSlotsWithAnswer(){
+  const slots=document.querySelectorAll('.slot');
+  chunks.forEach((ch,i)=>{
+    if(slots[i]){
+      const hintEl=slots[i].querySelector('.slot-hint');
+      const hintHTML=hintEl?hintEl.outerHTML:'';
+      slots[i].innerHTML=hintHTML+ch.text;
+      slots[i].dataset.filled=String(i);
       slots[i].classList.add('filled');
-      const wb = document.getElementById('wb-'+i);
-      if (wb) wb.classList.add('used');
+      const wb=document.getElementById('wb-'+i);
+      if(wb) wb.classList.add('used');
     }
   });
 }
 
-function submitMicAnswer() {
+function submitMicAnswer(){
   fillSlotsWithAnswer();
-  document.getElementById('mic-submit').style.display = 'none';
+  document.getElementById('mic-submit').style.display='none';
   checkAnswer(false);
 }
 
-function checkAnswer(isMCQ) {
-  const q = questions[idx];
-  let isWin = false, userAnswer = "";
-
-  if (isMCQ) {
-    if (!mcqSelected) return showErr(q.isLow ? "보기를 선택해주세요!" : "Please select an answer!");
-    userAnswer = mcqSelected;
-    isWin = userAnswer.toLowerCase().trim() === (q.answer||'').toLowerCase().trim();
+function checkAnswer(isMCQ){
+  const q=questions[idx];
+  let isWin=false,userAnswer="";
+  if(isMCQ){
+    if(!mcqSelected) return showErr(q.isLow?"보기를 선택해주세요!":"Please select an answer!");
+    userAnswer=mcqSelected;
+    isWin=userAnswer.toLowerCase().trim()===(q.answer||'').toLowerCase().trim();
   } else {
-    const slots = document.querySelectorAll('.slot');
-    const userParts = [];
-    for (let s of slots) {
-      if (!s.dataset.filled || s.dataset.filled === '') {
-        return showErr(q.isLow ? "빈칸을 모두 채워주세요!" : "Please fill all blanks!");
-      }
-      userParts.push(chunks[parseInt(s.dataset.filled)].text);
+    const slots=document.querySelectorAll('.slot');
+    const parts=[];
+    for(let s of slots){
+      if(!s.dataset.filled||s.dataset.filled==='') return showErr(q.isLow?"빈칸을 모두 채워주세요!":"Please fill all blanks!");
+      parts.push(chunks[parseInt(s.dataset.filled)].text);
     }
-    userAnswer = userParts.join(' ');
-    isWin = userAnswer.toLowerCase().trim() === (q.answer||'').toLowerCase().trim();
+    userAnswer=parts.join(' ');
+    isWin=userAnswer.toLowerCase().trim()===(q.answer||'').toLowerCase().trim();
   }
-
-  document.getElementById('err-box').style.display = 'none';
-  if (isWin) confetti();
-
-  const fb = document.getElementById('feedback');
-  fb.className = 'feedback ' + (isWin ? 'correct' : 'wrong');
-  fb.style.display = 'block';
-  let fbHTML = isWin
-    ? '<strong>✅ Perfect!</strong><br><br>' + (q.full_b||'').replace(/\*\*/g,'')
-    : '<strong>💪 정답: </strong>' + q.answer;
-  if (q.explanation) fbHTML += '<div class="feedback-note">💡 ' + q.explanation + '</div>';
-  if (isMCQ && q.distractor_exp) fbHTML += '<div class="feedback-note" style="color:#e67e22;">🚨 ' + q.distractor_exp + '</div>';
-  fb.innerHTML = fbHTML;
-
-  speechSynthesis.cancel();
-  audioPlaying = false;
-  ['mic-btn','mic-result','mic-submit'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = 'none';
-  });
-
-  results[idx] = {
-    originalIndex: q.originalIndex,
-    question: (q.speaker_a||'').replace(/\*\*/g,'') + ' / ' + (q.full_b||'').replace(/\*\*/g,''),
-    userAnswer,
-    correctAnswer: q.answer,
-    isCorrect: isWin
+  document.getElementById('err-box').style.display='none';
+  if(isWin) confetti();
+  const fb=document.getElementById('feedback');
+  fb.className='feedback '+(isWin?'correct':'wrong');
+  fb.style.display='block';
+  let fbHTML=isWin
+    ?'<strong>✅ Perfect!</strong><br><br>'+(q.full_b||'').replace(/\*\*/g,'')
+    :'<strong>💪 정답: </strong>'+q.answer;
+  if(q.explanation) fbHTML+='<div class="feedback-note">💡 '+q.explanation+'</div>';
+  if(isMCQ&&q.distractor_exp) fbHTML+='<div class="feedback-note" style="color:#e67e22;">🚨 '+q.distractor_exp+'</div>';
+  fb.innerHTML=fbHTML;
+  speechSynthesis.cancel();audioPlaying=false;
+  ['mic-btn','mic-result','mic-submit'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  results[idx]={
+    originalIndex:q.originalIndex,
+    question:(q.speaker_a||'').replace(/\*\*/g,'')+'/'+(q.full_b||'').replace(/\*\*/g,''),
+    userAnswer,correctAnswer:q.answer,isCorrect:isWin
   };
-
-  const btn = document.getElementById('main-btn');
-  btn.innerText = idx < questions.length-1 ? '다음 미션 >' : '결과 보기 🎯';
-  btn.onclick = () => { speechSynthesis.cancel(); idx < questions.length-1 ? (idx++, render()) : finish(); };
+  const btn=document.getElementById('main-btn');
+  btn.innerText=idx<questions.length-1?'다음 미션 >':'결과 보기 🎯';
+  btn.onclick=()=>{speechSynthesis.cancel();idx<questions.length-1?(idx++,render()):finish();};
 }
 
-function finish() {
-  const valid = results.filter(r => r);
-  const correct = valid.filter(r => r.isCorrect).length;
-  let html = '<h2 style="text-align:center;margin-top:0">Great job, '+student+'! 🎉</h2>';
-  html += '<div style="text-align:center;font-size:52px;margin:10px 0">🏆</div>';
-  html += '<h3 style="text-align:center;color:#555">Score: '+correct+' / '+questions.length+'</h3>';
-  html += '<div style="margin-top:20px">';
-  valid.forEach((r, i) => {
-    const col = r.isCorrect ? '#2ecc71' : '#e74c3c';
-    const ans = !r.isCorrect ? '<div style="color:#3498db;font-size:12px;margin-top:4px;font-weight:700">정답: '+r.correctAnswer+'</div>' : '';
-    html += '<div class="result-item '+(r.isCorrect?'pass':'fail')+'"><strong>Q'+(i+1)+'.</strong> '+r.question+'<div style="margin-top:4px;color:'+col+';font-size:12px">내 답: '+r.userAnswer+'</div>'+ans+'</div>';
+function finish(){
+  const valid=results.filter(r=>r);
+  const correct=valid.filter(r=>r.isCorrect).length;
+  let html='<h2 style="text-align:center;margin-top:0">Great job, '+student+'! 🎉</h2>';
+  html+='<div style="text-align:center;font-size:52px;margin:10px 0">🏆</div>';
+  html+='<h3 style="text-align:center;color:#555">Score: '+correct+' / '+questions.length+'</h3>';
+  html+='<div style="margin-top:20px">';
+  valid.forEach((r,i)=>{
+    const col=r.isCorrect?'#2ecc71':'#e74c3c';
+    const ans=!r.isCorrect?'<div style="color:#3498db;font-size:12px;margin-top:4px;font-weight:700">정답: '+r.correctAnswer+'</div>':'';
+    html+='<div class="result-item '+(r.isCorrect?'pass':'fail')+'"><strong>Q'+(i+1)+'.</strong> '+r.question+'<div style="margin-top:4px;color:'+col+';font-size:12px">내 답: '+r.userAnswer+'</div>'+ans+'</div>';
   });
-  html += '</div>';
-  html += '<button class="next-btn" onclick="location.reload()" style="width:100%;margin-top:15px">🔄 다시 시작</button>';
-  document.getElementById('title').innerText = 'Mission Clear!';
-  document.getElementById('content').innerHTML = html;
-
-  fetch(API_URL + "?action=saveResult&name=" + encodeURIComponent(student), {
-    method: 'POST',
-    body: JSON.stringify(valid),
-    headers: { 'Content-Type': 'application/json' }
-  }).then(() => console.log("저장 완료")).catch(e => console.log("저장 실패:", e));
+  html+='</div>';
+  html+='<button class="next-btn" onclick="location.reload()" style="width:100%;margin-top:15px">🔄 다시 시작</button>';
+  document.getElementById('title').innerText='Mission Clear!';
+  document.getElementById('content').innerHTML=html;
+  fetch(API_URL+"?action=saveResult&name="+encodeURIComponent(student),{
+    method:'POST',body:JSON.stringify(valid),headers:{'Content-Type':'application/json'}
+  }).then(()=>console.log("저장완료")).catch(e=>console.log("저장실패",e));
 }
 </script>
 </body>
