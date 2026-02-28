@@ -74,85 +74,113 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbxr2-JUh8aQnh7zkygYpZwoquVgwYzoA6CgDxhyrbK8ib0-sh7v_Wk7d2N1VB2mwX2g/exec";
 const params = new URLSearchParams(window.location.search);
 const student = params.get('name') || '은영';
+
 let questions=[], idx=0, results=[];
 let chunks=[], mcqSelected="", audioPlaying=false;
 
-// ★ TTS - 자연스러운 목소리 강제 선택
-let ttsVoices = [];
-function loadVoices() {
-  const all = speechSynthesis.getVoices();
-  // 크롬 자연음성 우선순위
-  ttsVoices = all.filter(v => v.lang.startsWith('en'));
-}
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🔧 FIX 1: TTS 자연음성
+// speechSynthesis.getVoices()는 비동기 - onvoiceschanged 이후에만 정확
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 if (window.speechSynthesis) {
-  loadVoices();
-  speechSynthesis.onvoiceschanged = loadVoices;
+  // 즉시 로드 시도 + 이벤트 대기
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = function() {
+    const v = window.speechSynthesis.getVoices();
+    console.log('🔊 Voices ready:', v.length, '| Google:', v.filter(x=>x.name.startsWith('Google')).map(x=>x.name));
+  };
 }
-function pickVoice(prefer) {
-  const all = speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
+
+function getBestVoice(wantFemale) {
+  const all = window.speechSynthesis.getVoices().filter(v => v.lang && v.lang.startsWith('en'));
   if (!all.length) return null;
-  // ★ 구글 온라인 자연음성 최우선 (크롬에서 자동 제공)
-  const googleUS = all.find(v => v.name === 'Google US English');
-  const googleUK = all.find(v => v.name === 'Google UK English Female' || v.name === 'Google UK English Male');
-  const googleFemale = all.find(v => v.name === 'Google UK English Female');
-  const googleMale = all.find(v => v.name === 'Google UK English Male');
+
+  // Google 자연음성 최우선
+  const gFemale = all.find(v => v.name === 'Google UK English Female');
+  const gMale   = all.find(v => v.name === 'Google UK English Male');
+  const gUS     = all.find(v => v.name === 'Google US English');
+  // Microsoft 자연음성 (Edge)
+  const msFemale = all.find(v => v.name.includes('Jenny') || v.name.includes('Aria') || v.name.includes('Michelle'));
+  const msMale   = all.find(v => v.name.includes('Guy') || v.name.includes('Davis'));
   const anyGoogle = all.find(v => v.name.startsWith('Google'));
-  if (prefer === 'female') return googleFemale || googleUS || anyGoogle || all[0];
-  return googleMale || googleUS || anyGoogle || all[all.length-1];
+
+  if (wantFemale) return gFemale || gUS || msFemale || anyGoogle || all[0];
+  return gMale || gUS || msMale || anyGoogle || all[all.length-1];
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🔧 FIX 2: 한글 완전 제거 후 TTS
+// 한글 문자가 TTS 텍스트에 남으면 기계음 + 한글 읽기 발생
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const KOREAN_NAMES = ['은영','창준','종민','민정','연화','해진','승진','승목','관기','기문','민수','건희','윤호','준호','상효','신희','태선','기태','세정','지숙'];
+
+function cleanForTTS(text) {
+  if (!text) return '';
+  return text
+    .replace(/\*\*/g, '')
+    .replace(/\[BLANK\]/g, 'blank')
+    // "이름: 텍스트" 형식에서 이름 부분 제거
+    .replace(/^[^:]+:\s*/, '')
+    // 한글 이름 개별 제거
+    .replace(new RegExp('(' + KOREAN_NAMES.join('|') + ')', 'g'), '')
+    // 모든 한글 유니코드 제거 (가-힣, ㄱ-ㅎ, ㅏ-ㅣ)
+    .replace(/[\uAC00-\uD7A3\u3131-\u318E\u3161-\u3163]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // 로딩 바
-let pct=0;
-const pctTimer = setInterval(()=>{
-  pct = Math.min(pct+(pct<80?Math.random()*8+2:1),95);
-  const el=document.getElementById('pct');
-  if(el) el.innerText=Math.round(pct)+"%";
-},300);
+let pct = 0;
+const pctTimer = setInterval(() => {
+  pct = Math.min(pct + (pct < 80 ? Math.random() * 8 + 2 : 1), 95);
+  const el = document.getElementById('pct');
+  if (el) el.innerText = Math.round(pct) + "%";
+}, 300);
 
-fetch(API_URL+"?action=getData&name="+encodeURIComponent(student))
-  .then(r=>r.json())
-  .then(data=>{
+fetch(API_URL + "?action=getData&name=" + encodeURIComponent(student))
+  .then(r => r.json())
+  .then(data => {
     clearInterval(pctTimer);
-    const el=document.getElementById('pct');
-    if(el) el.innerText="100%";
-    if(!Array.isArray(data)){
-      document.getElementById('content').innerHTML='<div style="color:red;padding:20px;text-align:center;font-weight:700;">❌ '+(data.error||JSON.stringify(data))+'</div>';
+    const el = document.getElementById('pct');
+    if (el) el.innerText = "100%";
+    if (!Array.isArray(data)) {
+      document.getElementById('content').innerHTML = '<div style="color:red;padding:20px;text-align:center;font-weight:700;">❌ ' + (data.error || JSON.stringify(data)) + '</div>';
       return;
     }
-    questions=data;
-    setTimeout(render,400);
+    questions = data;
+    setTimeout(render, 400);
   })
-  .catch(err=>{
+  .catch(err => {
     clearInterval(pctTimer);
-    document.getElementById('content').innerHTML='<div style="color:red;padding:20px;text-align:center;">네트워크 오류<br>'+err+'</div>';
+    document.getElementById('content').innerHTML = '<div style="color:red;padding:20px;text-align:center;">네트워크 오류<br>' + err + '</div>';
   });
 
-function confetti(){
-  ['🎉','✨','👏','💯','🔥','🌟'].forEach((e,i)=>{
-    for(let j=0;j<5;j++){
-      const d=document.createElement('div');
-      d.innerText=e;
-      d.style.cssText='position:fixed;left:'+(Math.random()*100)+'vw;top:-40px;font-size:'+(Math.random()*18+18)+'px;z-index:9999;pointer-events:none;transition:top 1.8s ease-in,opacity 1.8s';
+function confetti() {
+  ['🎉','✨','👏','💯','🔥','🌟'].forEach((e, i) => {
+    for (let j = 0; j < 5; j++) {
+      const d = document.createElement('div');
+      d.innerText = e;
+      d.style.cssText = 'position:fixed;left:' + (Math.random()*100) + 'vw;top:-40px;font-size:' + (Math.random()*18+18) + 'px;z-index:9999;pointer-events:none;transition:top 1.8s ease-in,opacity 1.8s';
       document.body.appendChild(d);
-      setTimeout(()=>{d.style.top='110vh';d.style.opacity='0';},50+i*30);
-      setTimeout(()=>d.remove(),2000);
+      setTimeout(() => { d.style.top = '110vh'; d.style.opacity = '0'; }, 50 + i*30);
+      setTimeout(() => d.remove(), 2000);
     }
   });
 }
 
 // SVG 아바타
-const EMOTIONS={
-  curious:{bY:-2,bAL:0,bAR:-20,eO:1.1,mT:'o'},
-  worried:{bY:1,bAL:-15,bAR:15,eO:0.8,mT:'sad'},
-  happy:{bY:-2,bAL:-5,bAR:5,eO:1.0,mT:'smile',blush:true},
-  focused:{bY:3,bAL:15,bAR:-15,eO:0.85,mT:'firm'},
-  serious:{bY:2,bAL:5,bAR:-5,eO:0.9,mT:'firm'},
-  urgent:{bY:2,bAL:25,bAR:-25,eO:1.2,mT:'wavy',sweat:true},
-  exhausted:{bY:0,bAL:0,bAR:0,eO:0.3,mT:'flat',bags:true},
-  proud:{bY:-2,bAL:-5,bAR:5,eO:1.0,mT:'bigSmile'},
-  resigned:{bY:-2,bAL:-15,bAR:15,eO:0.5,mT:'flat',bags:true}
+const EMOTIONS = {
+  curious:  {bY:-2,bAL:0,   bAR:-20,eO:1.1, mT:'o'},
+  worried:  {bY:1, bAL:-15, bAR:15, eO:0.8, mT:'sad'},
+  happy:    {bY:-2,bAL:-5,  bAR:5,  eO:1.0, mT:'smile',blush:true},
+  focused:  {bY:3, bAL:15,  bAR:-15,eO:0.85,mT:'firm'},
+  serious:  {bY:2, bAL:5,   bAR:-5, eO:0.9, mT:'firm'},
+  urgent:   {bY:2, bAL:25,  bAR:-25,eO:1.2, mT:'wavy',sweat:true},
+  exhausted:{bY:0, bAL:0,   bAR:0,  eO:0.3, mT:'flat',bags:true},
+  proud:    {bY:-2,bAL:-5,  bAR:5,  eO:1.0, mT:'bigSmile'},
+  resigned: {bY:-2,bAL:-15, bAR:15, eO:0.5, mT:'flat',bags:true}
 };
-const EMO_MAP={neutral:'serious',relieved:'happy',glad:'happy',angry:'urgent',sad:'resigned',blank:'serious'};
+const EMO_MAP = {neutral:'serious',relieved:'happy',glad:'happy',angry:'urgent',sad:'resigned',blank:'serious'};
 function emo(raw){const c=(raw||'').toLowerCase().replace(/[^a-z]/g,'');return EMO_MAP[c]||(EMOTIONS[c]?c:'serious');}
 function buildSVG(gender,emotion){
   const F=gender==='female';
@@ -160,13 +188,13 @@ function buildSVG(gender,emotion){
   const skin=F?'#ffe0bd':'#f1c27d',hair='#2c3e50',suit='#1a252f';
   const bY=E.bY||0,bAL=E.bAL||0,bAR=E.bAR||0,eO=E.eO||1;
   let mouth='';
-  if(E.mT==='flat') mouth='<line x1="44" y1="70" x2="56" y2="70" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>';
-  if(E.mT==='firm') mouth='<line x1="40" y1="70" x2="60" y2="70" stroke="#333" stroke-width="3" stroke-linecap="round"/>';
-  if(E.mT==='sad') mouth='<path d="M45,73 Q50,65 55,73" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
-  if(E.mT==='smile') mouth='<path d="M44,68 Q50,76 56,68" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
+  if(E.mT==='flat')     mouth='<line x1="44" y1="70" x2="56" y2="70" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>';
+  if(E.mT==='firm')     mouth='<line x1="40" y1="70" x2="60" y2="70" stroke="#333" stroke-width="3" stroke-linecap="round"/>';
+  if(E.mT==='sad')      mouth='<path d="M45,73 Q50,65 55,73" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
+  if(E.mT==='smile')    mouth='<path d="M44,68 Q50,76 56,68" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
   if(E.mT==='bigSmile') mouth='<path d="M42,68 Q50,80 58,68 Z" fill="#fff" stroke="#333" stroke-width="2"/>';
-  if(E.mT==='o') mouth='<circle cx="50" cy="72" r="4" fill="#333"/>';
-  if(E.mT==='wavy') mouth='<path d="M42,72 Q46,68 50,72 Q54,76 58,72" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
+  if(E.mT==='o')        mouth='<circle cx="50" cy="72" r="4" fill="#333"/>';
+  if(E.mT==='wavy')     mouth='<path d="M42,72 Q46,68 50,72 Q54,76 58,72" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
   const extras=
     (E.blush?'<ellipse cx="35" cy="58" rx="6" ry="3" fill="#e74c3c" opacity="0.25"/><ellipse cx="65" cy="58" rx="6" ry="3" fill="#e74c3c" opacity="0.25"/>':'')+
     (E.sweat?'<ellipse cx="15" cy="42" rx="3" ry="5" fill="#3498db" opacity="0.7"/><ellipse cx="85" cy="42" rx="3" ry="5" fill="#3498db" opacity="0.7"/>':'')+
@@ -187,123 +215,161 @@ function buildSVG(gender,emotion){
     mouth+extras+'</svg>';
 }
 
-// ★ TTS 재생
-function playAudio(answered){
-  const btn=document.getElementById('audio-btn');
-  if(!btn) return;
-  if(audioPlaying||speechSynthesis.speaking){
-    speechSynthesis.cancel();
-    btn.className='audio-btn';btn.innerText='▶️ 대화 듣기';audioPlaying=false;return;
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🔧 FIX 3: TTS 재생 함수 - 자연음성 + 한글 제거
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function playAudio(answered) {
+  const btn = document.getElementById('audio-btn');
+  if (!btn || !window.speechSynthesis) return;
+
+  if (audioPlaying || window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    if (btn) { btn.className='audio-btn'; btn.innerText='▶️ 대화 듣기'; }
+    audioPlaying = false;
+    return;
   }
-  const allV=speechSynthesis.getVoices().filter(v=>v.lang.startsWith('en'));
-  if(!allV.length) return;
-  const q=questions[idx];
-  const tA=(q.speaker_a||'').replace(/\*\*/g,'').replace(/\[BLANK\]/g,'blank').replace(/^[^:]+:\s*/,'').trim();
-  const tB=(answered?q.full_b:q.gapped_b.replace(/\[BLANK\]/g,'blank')).replace(/\*\*/g,'').replace(/^[^:]+:\s*/,'').trim();
 
-  // ★ 자연음성 강제선택
-  const vFemale = pickVoice('female');
-  const vMale = pickVoice('male');
-  const speakerBisFemale = q.student_gender==='female';
+  const q = questions[idx];
+  const tA = cleanForTTS(q.speaker_a);
+  const tB = cleanForTTS(answered ? q.full_b : q.gapped_b.replace(/\[BLANK\]/g,'blank'));
 
-  const uA=new SpeechSynthesisUtterance(tA);
-  const uB=new SpeechSynthesisUtterance(tB);
-  uA.voice = speakerBisFemale ? vMale : vFemale;
-  uB.voice = speakerBisFemale ? vFemale : vMale;
-  uA.rate=0.88; uB.rate=0.88;
-  uA.pitch=1.0; uB.pitch=1.0;
+  console.log('🔊 TTS A:', tA);
+  console.log('🔊 TTS B:', tB);
 
-  btn.className='audio-btn playing';btn.innerText='⏹️ 멈춤';audioPlaying=true;
-  uB.onend=()=>{btn.className='audio-btn';btn.innerText='▶️ 대화 듣기';audioPlaying=false;};
-  uA.onend=()=>{if(audioPlaying) setTimeout(()=>speechSynthesis.speak(uB),400);};
-  speechSynthesis.speak(uA);
+  if (!tA && !tB) return;
+
+  const isBFemale = (q.student_gender === 'female');
+  const vA = getBestVoice(!isBFemale); // A는 B와 반대 성별
+  const vB = getBestVoice(isBFemale);
+
+  console.log('🎤 Voice A:', vA ? vA.name : 'default', '| Voice B:', vB ? vB.name : 'default');
+
+  const uA = new SpeechSynthesisUtterance(tA);
+  const uB = new SpeechSynthesisUtterance(tB);
+  uA.lang = 'en-US'; uB.lang = 'en-US';
+  if (vA) uA.voice = vA;
+  if (vB) uB.voice = vB;
+  uA.rate = 0.88; uB.rate = 0.88;
+  uA.pitch = 1.0; uB.pitch = 1.0;
+
+  btn.className = 'audio-btn playing';
+  btn.innerText = '⏹️ 멈춤';
+  audioPlaying = true;
+
+  uB.onend = () => { if(btn){btn.className='audio-btn';btn.innerText='▶️ 대화 듣기';} audioPlaying=false; };
+  uA.onend = () => { if (audioPlaying) setTimeout(() => window.speechSynthesis.speak(uB), 400); };
+  window.speechSynthesis.speak(uA);
 }
 
-function render(){
-  if(!questions.length) return;
-  const q=questions[idx];
-  const stage=q.stage||1;
-  const isMCQ=q.type==="MCQ";
-  const stageColors=['','#2ecc71','#f39c12','#e74c3c'];
+function render() {
+  if (!questions.length) return;
+  const q = questions[idx];
+  const stage = q.stage || 1;
+  const isMCQ = q.type === "MCQ";
+  const stageColors = ['','#2ecc71','#f39c12','#e74c3c'];
 
-  document.getElementById('title').innerHTML='Mission #'+(idx+1)+
+  document.getElementById('title').innerHTML = 'Mission #'+(idx+1)+
     ' <span style="background:'+stageColors[stage]+';color:white;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:800;margin-left:6px;vertical-align:middle;">Stage '+stage+'</span>';
 
-  const gB=q.student_gender==='female'?'female':'male';
-  const gA=gB==='female'?'male':'female';
-  const svgA=buildSVG(gA,q.emotion_a||'curious');
-  const svgB=buildSVG(gB,q.emotion_b||'focused');
-  const fcA=gA==='female'?'female':'';
-  const fcB=gB==='female'?'female':'';
+  const gB = q.student_gender==='female'?'female':'male';
+  const gA = gB==='female'?'male':'female';
+  const svgA = buildSVG(gA, q.emotion_a||'curious');
+  const svgB = buildSVG(gB, q.emotion_b||'focused');
+  const fcA = gA==='female'?'female':'';
+  const fcB = gB==='female'?'female':'';
 
-  let cleanGapped=(q.gapped_b||'').replace(/\*\*/g,'').replace(/(\[BLANK\]\s*)+/g,'[BLANK]');
-  let interactiveHTML='';
+  let cleanGapped = (q.gapped_b||'').replace(/\*\*/g,'').replace(/(\[BLANK\]\s*)+/g,'[BLANK]');
+  let interactiveHTML = '';
 
-  if(!isMCQ){
-    // ★ chunks 검증 및 fallback
-    let rawChunks = Array.isArray(q.chunks) && q.chunks.length>0 ? q.chunks : [];
-    if(rawChunks.length===0){
-      // 단어별 fallback
-      rawChunks=(q.answer||'').split(' ').filter(w=>w.trim()).map((w,i)=>({text:w,hint_letter:i===0?w[0]:null}));
+  if (!isMCQ) {
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 🔧 FIX 4: chunks 버그 수정
+    // 문제: 서버에서 chunks 배열이 와도 단어별로 쪼개짐
+    // 원인: chunks 객체가 {text, hint_letter} 형태인지 확인 없이 처리
+    // 해결: 서버 chunks를 신뢰하고 그대로 사용. fallback은 chunks가 완전히 없을 때만
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    let rawChunks = null;
+
+    if (Array.isArray(q.chunks) && q.chunks.length > 0) {
+      rawChunks = q.chunks;
+      console.log('✅ Server chunks:', q.chunks.length, q.chunks.map(c => typeof c==='string'?c:c.text));
     }
-    // hint_letter 없는 청크 보정
-    chunks=rawChunks.map((ch,i)=>({
-      text: ch.text||ch||'',
-      hint_letter: ch.hint_letter||null
-    }));
 
-    const slotsHTML='<div class="slot-group">'+
-      chunks.map((ch,i)=>{
-        const hint=ch.hint_letter?'<span class="slot-hint">'+ch.hint_letter+'</span>':'';
+    if (!rawChunks) {
+      // fallback - 단어 분리 (서버 chunks 없을 때만)
+      rawChunks = (q.answer||'').split(' ').filter(w=>w.trim())
+        .map((w,i) => ({text:w, hint_letter:i===0?w[0]:null}));
+      console.warn('⚠️ No server chunks, fallback words:', rawChunks.map(c=>c.text));
+    }
+
+    // 정규화: string이면 객체로
+    chunks = rawChunks.map((ch, i) => ({
+      text: (typeof ch === 'string') ? ch : (ch.text || String(ch)),
+      hint_letter: (typeof ch === 'object' && ch.hint_letter) ? ch.hint_letter : null
+    })).filter(ch => ch.text.trim() !== '');
+
+    console.log('📦 Final chunks ('+chunks.length+'):', chunks.map(c=>'"'+c.text+'"'));
+
+    // 슬롯: chunks 개수만큼
+    const slotsHTML = '<div class="slot-group">' +
+      chunks.map((ch,i) => {
+        const hint = ch.hint_letter ? '<span class="slot-hint">'+ch.hint_letter+'</span>' : '';
         return '<div class="slot" id="slot-'+i+'" data-filled="" onclick="clearSlot(this)">'+hint+'</div>';
-      }).join('')+'</div>';
+      }).join('') + '</div>';
 
-    // ★ 단어뱅크 반드시 셔플
-    const shuffled=[...chunks].map((c,i)=>({...c,origIdx:i}));
-    // Fisher-Yates 셔플
-    for(let i=shuffled.length-1;i>0;i--){
-      const j=Math.floor(Math.random()*(i+1));
-      [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
+    // 워드뱅크: Fisher-Yates 셔플
+    const shuffled = chunks.map((c,i) => ({...c, origIdx:i}));
+    for (let i=shuffled.length-1; i>0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [shuffled[i],shuffled[j]] = [shuffled[j],shuffled[i]];
     }
-    interactiveHTML='<div class="word-bank">'+
-      shuffled.map(ch=>'<button class="word-btn" id="wb-'+ch.origIdx+'" onclick="fillSlot(this,'+ch.origIdx+')">'+ch.text+'</button>').join('')+
-      '</div>';
-    cleanGapped=cleanGapped.replace(/\[BLANK\]/g,slotsHTML);
+
+    interactiveHTML = '<div class="word-bank">' +
+      shuffled.map(ch =>
+        '<button class="word-btn" id="wb-'+ch.origIdx+'" onclick="fillSlot(this,'+ch.origIdx+')">'+ch.text+'</button>'
+      ).join('') + '</div>';
+
+    cleanGapped = cleanGapped.replace(/\[BLANK\]/g, slotsHTML);
+
   } else {
-    cleanGapped=cleanGapped.replace(/\[BLANK\]/g,'<span style="border-bottom:2px solid #3498db;padding:0 20px;display:inline-block;">___</span>');
+    cleanGapped = cleanGapped.replace(/\[BLANK\]/g,'<span style="border-bottom:2px solid #3498db;padding:0 20px;display:inline-block;">___</span>');
   }
 
-  const prevBtn=idx>0?'<button class="prev-btn" onclick="goPrev()">← 이전</button>':'';
-  let html='<div class="scenario-box"><div class="instruction">'+q.instruction+'</div><div class="scenario">💡 '+(q.scenario||'')+'</div></div>';
-  html+='<button id="audio-btn" class="audio-btn" onclick="playAudio(false)">▶️ 대화 듣기</button>';
-  html+='<div class="chat-wrap">';
-  html+='<div class="chat-row"><div class="avatar-wrap"><div class="avatar-svg '+fcA+'">'+svgA+'</div><div class="avatar-name">'+q.coworker_name+'</div></div><div class="bubble">'+(q.speaker_a||'').replace(/\*\*/g,'')+'</div></div>';
-  html+='<div class="chat-row b"><div class="avatar-wrap"><div class="avatar-svg '+fcB+'">'+svgB+'</div><div class="avatar-name">'+q.student_name+'</div></div><div class="bubble">'+cleanGapped+'</div></div>';
-  html+='</div>';
-  if(isMCQ){
-    const opts=[q.answer,...(q.distractors||[])].filter(Boolean);
-    // MCQ도 셔플
-    for(let i=opts.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[opts[i],opts[j]]=[opts[j],opts[i]];}
-    html+='<div id="mcq-area">'+opts.map((o,i)=>'<button class="mcq-btn" id="mcq-'+i+'" onclick="selectMCQ(this,\''+o.replace(/'/g,"\\'")+'\')">'+o+'</button>').join('')+'</div>';
-  } else {
-    html+=interactiveHTML;
-    html+='<div class="mic-section">';
-    html+='<div class="mic-info">🎙️ '+(q.isLow?'빈칸 단어만 말해주세요!':'Speak ONLY the target words.')+'</div>';
-    html+='<button class="mic-btn" id="mic-btn" onclick="startMic()">🎙️ '+(q.isLow?'마이크 켜기':'Speak Answer')+'</button>';
-    html+='<div class="mic-result" id="mic-result"></div>';
-    html+='<button class="mic-submit-btn" id="mic-submit" onclick="submitMicAnswer()">✅ 이 발음으로 정답 확인</button>';
-    html+='</div>';
-  }
-  html+='<div class="error-box" id="err-box"></div>';
-  html+='<div class="feedback" id="feedback"></div>';
-  html+='<div class="btn-group">'+prevBtn+'<button class="next-btn" id="main-btn" onclick="checkAnswer('+(isMCQ)+')">정답 확인</button></div>';
+  const prevBtn = idx>0 ? '<button class="prev-btn" onclick="goPrev()">← 이전</button>' : '';
+  let html = '<div class="scenario-box"><div class="instruction">'+q.instruction+'</div><div class="scenario">💡 '+(q.scenario||'')+'</div></div>';
+  html += '<button id="audio-btn" class="audio-btn" onclick="playAudio(false)">▶️ 대화 듣기</button>';
+  html += '<div class="chat-wrap">';
+  html += '<div class="chat-row"><div class="avatar-wrap"><div class="avatar-svg '+fcA+'">'+svgA+'</div><div class="avatar-name">'+q.coworker_name+'</div></div><div class="bubble">'+(q.speaker_a||'').replace(/\*\*/g,'')+'</div></div>';
+  html += '<div class="chat-row b"><div class="avatar-wrap"><div class="avatar-svg '+fcB+'">'+svgB+'</div><div class="avatar-name">'+q.student_name+'</div></div><div class="bubble">'+cleanGapped+'</div></div>';
+  html += '</div>';
 
-  document.getElementById('content').innerHTML=html;
-  mcqSelected='';audioPlaying=false;
-  if(results[idx]) restoreResult();
+  if (isMCQ) {
+    const opts = [q.answer,...(q.distractors||[])].filter(Boolean);
+    for (let i=opts.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[opts[i],opts[j]]=[opts[j],opts[i]];}
+    html += '<div id="mcq-area">'+opts.map((o,i)=>
+      '<button class="mcq-btn" id="mcq-'+i+'" onclick="selectMCQ(this,\''+o.replace(/'/g,"\\'")+'\')">'+o+'</button>'
+    ).join('')+'</div>';
+  } else {
+    html += interactiveHTML;
+    html += '<div class="mic-section">';
+    html += '<div class="mic-info">🎙️ '+(q.isLow?'빈칸 단어만 말해주세요!':'Speak ONLY the target words.')+'</div>';
+    html += '<button class="mic-btn" id="mic-btn" onclick="startMic()">🎙️ '+(q.isLow?'마이크 켜기':'Speak Answer')+'</button>';
+    html += '<div class="mic-result" id="mic-result"></div>';
+    html += '<button class="mic-submit-btn" id="mic-submit" onclick="submitMicAnswer()">✅ 이 발음으로 정답 확인</button>';
+    html += '</div>';
+  }
+
+  html += '<div class="error-box" id="err-box"></div>';
+  html += '<div class="feedback" id="feedback"></div>';
+  html += '<div class="btn-group">'+prevBtn+'<button class="next-btn" id="main-btn" onclick="checkAnswer('+(isMCQ)+')">정답 확인</button></div>';
+
+  document.getElementById('content').innerHTML = html;
+  mcqSelected = '';
+  audioPlaying = false;
+  if (results[idx]) restoreResult();
 }
 
-function restoreResult(){
+function restoreResult() {
   const saved=results[idx]; if(!saved) return;
   const q=questions[idx];
   const fb=document.getElementById('feedback');
@@ -315,10 +381,10 @@ function restoreResult(){
   ['mic-btn','mic-result','mic-submit'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   const btn=document.getElementById('main-btn');
   btn.innerText=idx<questions.length-1?'다음 미션 >':'결과 보기 🎯';
-  btn.onclick=()=>{speechSynthesis.cancel();idx<questions.length-1?(idx++,render()):finish();};
+  btn.onclick=()=>{window.speechSynthesis.cancel();idx<questions.length-1?(idx++,render()):finish();};
 }
 
-function goPrev(){speechSynthesis.cancel();if(idx>0){idx--;render();}}
+function goPrev(){window.speechSynthesis.cancel();if(idx>0){idx--;render();}}
 
 function selectMCQ(btn,opt){
   document.querySelectorAll('.mcq-btn').forEach(b=>b.classList.remove('selected'));
@@ -357,99 +423,94 @@ function clearSlot(s){
 
 function showErr(msg){const e=document.getElementById('err-box');e.innerText='🚨 '+msg;e.style.display='block';}
 
-// ★★★ 마이크 - 완전 재작성 (no-speech 타임아웃 연장)
-function startMic(){
-  const micBtn=document.getElementById('mic-btn');
-  const micResult=document.getElementById('mic-result');
-  const micSubmit=document.getElementById('mic-submit');
-  const SRClass=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SRClass){showErr("Chrome 브라우저를 사용해주세요.");return;}
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🔧 FIX 5: 마이크 - 첫번째 HTML 방식으로 완전 교체
+// 첫번째 HTML(GAS버전)에서 마이크 인식 됐었음 → 그 로직 사용
+// recognition 매번 new로 생성 (재사용 시 오류 발생)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function startMic() {
+  const micBtn    = document.getElementById('mic-btn');
+  const micResult = document.getElementById('mic-result');
+  const micSubmit = document.getElementById('mic-submit');
 
-  micBtn.className='mic-btn listening';
-  micBtn.innerHTML='🎙️ 듣고 있습니다...';
-  micResult.style.display='none';
-  micSubmit.style.display='none';
+  const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SRClass) { showErr("Chrome 브라우저를 사용해주세요."); return; }
 
-  const rec=new SRClass();
-  rec.lang='en-US';
-  rec.continuous=false;
-  rec.interimResults=false;
-  rec.maxAlternatives=3; // ★ 여러 후보 받기
+  micBtn.className = 'mic-btn listening';
+  micBtn.innerHTML = '🎙️ 듣고 있습니다...';
+  micResult.style.display = 'none';
+  micSubmit.style.display = 'none';
 
-  let hasResult=false;
+  // ★ 매번 새 인스턴스 (첫번째 HTML 방식)
+  const rec = new SRClass();
+  rec.lang = 'en-US';
+  rec.continuous = false;
+  rec.interimResults = false;
+  rec.maxAlternatives = 3;
 
-  rec.onstart=function(){
-    micBtn.innerHTML='🎙️ 듣고 있습니다...';
-  };
+  let hasResult = false;
 
-  rec.onresult=function(event){
-    hasResult=true;
-    // ★ 가장 좋은 매칭 결과 선택
-    let bestSpoken='', bestMatch=0;
-    const q=questions[idx];
-    const targetWords=(q.answer||'').toLowerCase().replace(/[.,!?']/g,'').split(' ').filter(w=>w);
+  rec.onresult = function(event) {
+    hasResult = true;
+    const q = questions[idx];
+    const targetWords = (q.answer||'').toLowerCase().replace(/[.,!?']/g,'').split(' ').filter(w=>w);
 
-    for(let ri=0;ri<event.results[0].length;ri++){
-      const sp=event.results[0][ri].transcript.toLowerCase().replace(/[.,!?']/g,'').trim();
-      let mc=0;
-      targetWords.forEach(w=>{if(sp.includes(w)) mc++;});
-      if(mc>bestMatch){bestMatch=mc;bestSpoken=sp;}
+    let bestSpoken = event.results[0][0].transcript;
+    let bestMatch = 0;
+    for (let ri=0; ri<event.results[0].length; ri++) {
+      const sp = event.results[0][ri].transcript.toLowerCase().replace(/[.,!?']/g,'').trim();
+      let mc = 0;
+      targetWords.forEach(w => { if(sp.includes(w)) mc++; });
+      if (mc > bestMatch) { bestMatch=mc; bestSpoken=event.results[0][ri].transcript; }
     }
-    const spoken=event.results[0][0].transcript;
-    if(!bestSpoken) bestSpoken=spoken.toLowerCase().replace(/[.,!?']/g,'').trim();
 
-    micBtn.className='mic-btn';
-    micBtn.innerHTML='🎙️ 다시 말하기';
-    micResult.style.display='block';
-    micResult.innerHTML='🗣️ 인식됨: <strong>"'+spoken+'"</strong>';
+    const matchRate = targetWords.length>0 ? bestMatch/targetWords.length : 0;
+    console.log('🎤 Spoken:', bestSpoken, '| Match:', Math.round(matchRate*100)+'%');
 
-    const matchRate=targetWords.length>0?bestMatch/targetWords.length:0;
+    micBtn.className = 'mic-btn';
+    micBtn.innerHTML = '🎙️ 다시 말하기';
+    micResult.style.display = 'block';
+    micResult.innerHTML = '🗣️ 인식됨: <strong>"' + bestSpoken + '"</strong>';
 
-    if(matchRate>=0.8){
+    if (matchRate >= 0.6) {
       confetti();
       fillSlotsWithAnswer();
-      setTimeout(()=>checkAnswer(false),600);
+      setTimeout(() => checkAnswer(false), 600);
     } else {
-      micResult.innerHTML+='<br><span style="color:#e74c3c;font-size:12px;">다시 말하거나 아래 버튼을 누르세요.</span>';
-      micSubmit.style.display='block';
+      micResult.innerHTML += '<br><span style="color:#e74c3c;font-size:12px;">다시 말하거나 아래 버튼을 누르세요.</span>';
+      micSubmit.style.display = 'block';
     }
   };
 
-  rec.onerror=function(event){
-    micBtn.className='mic-btn';
-    micBtn.innerHTML='🎙️ 다시 말하기';
-    micResult.style.display='block';
-    if(event.error==='no-speech'){
-      micResult.innerHTML='⚠️ 소리가 감지되지 않았어요. 마이크에 가까이 대고 다시 탭하세요.';
-    } else if(event.error==='not-allowed'){
-      micResult.innerHTML='⚠️ 마이크 권한이 필요해요. 주소창 왼쪽 🔒를 눌러 마이크를 허용해주세요.';
-    } else if(event.error==='network'){
-      micResult.innerHTML='⚠️ 네트워크 오류. 인터넷 연결을 확인해주세요.';
-    } else {
-      micResult.innerHTML='⚠️ 오류: '+event.error+' - 다시 탭하세요';
-    }
+  rec.onerror = function(event) {
+    micBtn.className = 'mic-btn';
+    micBtn.innerHTML = '🎙️ 다시 말하기';
+    micResult.style.display = 'block';
+    if (event.error==='no-speech')     micResult.innerHTML='⚠️ 소리 감지 안됨. 마이크에 가까이 대고 다시 탭하세요.';
+    else if(event.error==='not-allowed') micResult.innerHTML='⚠️ 마이크 권한 필요. 주소창 🔒 → 마이크 허용';
+    else if(event.error==='network')   micResult.innerHTML='⚠️ 네트워크 오류. 인터넷 확인해주세요.';
+    else micResult.innerHTML='⚠️ 오류: '+event.error+' - 다시 탭하세요';
   };
 
-  rec.onend=function(){
-    if(!hasResult){
-      micBtn.className='mic-btn';
-      micBtn.innerHTML='🎙️ 다시 말하기';
+  rec.onend = function() {
+    if (!hasResult) {
+      micBtn.className = 'mic-btn';
+      micBtn.innerHTML = '🎙️ 다시 말하기';
     }
   };
 
   try { rec.start(); }
-  catch(e){
-    micBtn.className='mic-btn';
-    micBtn.innerHTML='🎙️ 다시 말하기';
+  catch(e) {
+    micBtn.className='mic-btn'; micBtn.innerHTML='🎙️ 다시 말하기';
     micResult.style.display='block';
     micResult.innerHTML='⚠️ 마이크 시작 실패: '+e.message;
   }
 }
 
-function fillSlotsWithAnswer(){
-  const slots=document.querySelectorAll('.slot');
-  chunks.forEach((ch,i)=>{
-    if(slots[i]){
+function fillSlotsWithAnswer() {
+  const slots = document.querySelectorAll('.slot');
+  chunks.forEach((ch,i) => {
+    if (slots[i]) {
       const hintEl=slots[i].querySelector('.slot-hint');
       const hintHTML=hintEl?hintEl.outerHTML:'';
       slots[i].innerHTML=hintHTML+ch.text;
@@ -461,11 +522,7 @@ function fillSlotsWithAnswer(){
   });
 }
 
-function submitMicAnswer(){
-  fillSlotsWithAnswer();
-  document.getElementById('mic-submit').style.display='none';
-  checkAnswer(false);
-}
+function submitMicAnswer(){fillSlotsWithAnswer();document.getElementById('mic-submit').style.display='none';checkAnswer(false);}
 
 function checkAnswer(isMCQ){
   const q=questions[idx];
@@ -495,7 +552,8 @@ function checkAnswer(isMCQ){
   if(q.explanation) fbHTML+='<div class="feedback-note">💡 '+q.explanation+'</div>';
   if(isMCQ&&q.distractor_exp) fbHTML+='<div class="feedback-note" style="color:#e67e22;">🚨 '+q.distractor_exp+'</div>';
   fb.innerHTML=fbHTML;
-  speechSynthesis.cancel();audioPlaying=false;
+  window.speechSynthesis.cancel();
+  audioPlaying=false;
   ['mic-btn','mic-result','mic-submit'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   results[idx]={
     originalIndex:q.originalIndex,
@@ -504,7 +562,7 @@ function checkAnswer(isMCQ){
   };
   const btn=document.getElementById('main-btn');
   btn.innerText=idx<questions.length-1?'다음 미션 >':'결과 보기 🎯';
-  btn.onclick=()=>{speechSynthesis.cancel();idx<questions.length-1?(idx++,render()):finish();};
+  btn.onclick=()=>{window.speechSynthesis.cancel();idx<questions.length-1?(idx++,render()):finish();};
 }
 
 function finish(){
