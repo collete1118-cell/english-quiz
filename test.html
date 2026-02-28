@@ -272,7 +272,8 @@ function render() {
     ' <span style="background:'+stageColors[stage]+';color:white;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:800;margin-left:6px;vertical-align:middle;">Stage '+stage+'</span>';
 
   const gB = q.student_gender==='female'?'female':'male';
-  const gA = gB==='female'?'male':'female';
+  // ★ coworker 성별: 서버에서 받은 coworker_gender 사용. 없으면 student와 반대
+  const gA = q.coworker_gender ? q.coworker_gender : (gB==='female'?'male':'female');
   const svgA = buildSVG(gA, q.emotion_a||'curious');
   const svgB = buildSVG(gB, q.emotion_b||'focused');
   const fcA = gA==='female'?'female':'';
@@ -423,11 +424,6 @@ function clearSlot(s){
 
 function showErr(msg){const e=document.getElementById('err-box');e.innerText='🚨 '+msg;e.style.display='block';}
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🔧 FIX 5: 마이크 - 첫번째 HTML 방식으로 완전 교체
-// 첫번째 HTML(GAS버전)에서 마이크 인식 됐었음 → 그 로직 사용
-// recognition 매번 new로 생성 (재사용 시 오류 발생)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function startMic() {
   const micBtn    = document.getElementById('mic-btn');
   const micResult = document.getElementById('mic-result');
@@ -436,74 +432,104 @@ function startMic() {
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SRClass) { showErr("Chrome 브라우저를 사용해주세요."); return; }
 
+  // TTS 재생 중이면 먼저 끔 (마이크 충돌 방지)
+  if (window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    audioPlaying = false;
+    const ab = document.getElementById('audio-btn');
+    if (ab) { ab.className='audio-btn'; ab.innerText='▶️ 대화 듣기'; }
+  }
+
   micBtn.className = 'mic-btn listening';
-  micBtn.innerHTML = '🎙️ 듣고 있습니다...';
+  micBtn.innerHTML = '🎙️ 말하는 중... (탭하면 취소)';
   micResult.style.display = 'none';
   micSubmit.style.display = 'none';
 
-  // ★ 매번 새 인스턴스 (첫번째 HTML 방식)
   const rec = new SRClass();
   rec.lang = 'en-US';
   rec.continuous = false;
-  rec.interimResults = false;
+  rec.interimResults = true;  // ★ interim 켜야 no-speech 줄어들고 반응 빠름
   rec.maxAlternatives = 3;
 
-  let hasResult = false;
+  let finalTranscript = '';
+  let gotFinal = false;
+
+  // 탭하면 강제 중단
+  micBtn.onclick = function() {
+    try { rec.stop(); } catch(e) {}
+    micBtn.onclick = startMic;
+  };
 
   rec.onresult = function(event) {
-    hasResult = true;
-    const q = questions[idx];
-    const targetWords = (q.answer||'').toLowerCase().replace(/[.,!?']/g,'').split(' ').filter(w=>w);
-
-    let bestSpoken = event.results[0][0].transcript;
-    let bestMatch = 0;
-    for (let ri=0; ri<event.results[0].length; ri++) {
-      const sp = event.results[0][ri].transcript.toLowerCase().replace(/[.,!?']/g,'').trim();
-      let mc = 0;
-      targetWords.forEach(w => { if(sp.includes(w)) mc++; });
-      if (mc > bestMatch) { bestMatch=mc; bestSpoken=event.results[0][ri].transcript; }
+    let interim = '';
+    finalTranscript = '';
+    for (let i = 0; i < event.results.length; i++) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+        gotFinal = true;
+      } else {
+        interim += event.results[i][0].transcript;
+      }
     }
-
-    const matchRate = targetWords.length>0 ? bestMatch/targetWords.length : 0;
-    console.log('🎤 Spoken:', bestSpoken, '| Match:', Math.round(matchRate*100)+'%');
-
-    micBtn.className = 'mic-btn';
-    micBtn.innerHTML = '🎙️ 다시 말하기';
-    micResult.style.display = 'block';
-    micResult.innerHTML = '🗣️ 인식됨: <strong>"' + bestSpoken + '"</strong>';
-
-    if (matchRate >= 0.6) {
-      confetti();
-      fillSlotsWithAnswer();
-      setTimeout(() => checkAnswer(false), 600);
-    } else {
-      micResult.innerHTML += '<br><span style="color:#e74c3c;font-size:12px;">다시 말하거나 아래 버튼을 누르세요.</span>';
-      micSubmit.style.display = 'block';
+    // 듣는 중 interim 표시
+    if (interim) {
+      micResult.style.display = 'block';
+      micResult.innerHTML = '🎤 <em style="color:#aaa">' + interim + '...</em>';
     }
   };
 
   rec.onerror = function(event) {
     micBtn.className = 'mic-btn';
     micBtn.innerHTML = '🎙️ 다시 말하기';
+    micBtn.onclick = startMic;
     micResult.style.display = 'block';
-    if (event.error==='no-speech')     micResult.innerHTML='⚠️ 소리 감지 안됨. 마이크에 가까이 대고 다시 탭하세요.';
-    else if(event.error==='not-allowed') micResult.innerHTML='⚠️ 마이크 권한 필요. 주소창 🔒 → 마이크 허용';
-    else if(event.error==='network')   micResult.innerHTML='⚠️ 네트워크 오류. 인터넷 확인해주세요.';
-    else micResult.innerHTML='⚠️ 오류: '+event.error+' - 다시 탭하세요';
+    if (event.error === 'no-speech') {
+      micResult.innerHTML = '⚠️ 소리 감지 안됨.<br><strong>마이크에 바짝 붙여서 크게 말해보세요.</strong><br><small style="color:#888">또는 단어 버튼을 직접 클릭해도 됩니다.</small>';
+    } else if (event.error === 'not-allowed') {
+      micResult.innerHTML = '⚠️ 마이크 권한 필요 → 주소창 🔒 클릭 → 마이크 허용';
+    } else if (event.error === 'network') {
+      micResult.innerHTML = '⚠️ 네트워크 오류. 인터넷 연결 확인.';
+    } else {
+      micResult.innerHTML = '⚠️ 오류: ' + event.error;
+    }
   };
 
   rec.onend = function() {
-    if (!hasResult) {
-      micBtn.className = 'mic-btn';
-      micBtn.innerHTML = '🎙️ 다시 말하기';
+    micBtn.onclick = startMic;
+    micBtn.className = 'mic-btn';
+    micBtn.innerHTML = '🎙️ 다시 말하기';
+
+    if (!gotFinal || !finalTranscript.trim()) return;
+
+    const q = questions[idx];
+    const targetWords = (q.answer||'').toLowerCase().replace(/[.,!?']/g,'').split(' ').filter(w=>w);
+    const spokenClean = finalTranscript.toLowerCase().replace(/[.,!?']/g,'').trim();
+    let matchCount = 0;
+    targetWords.forEach(w => { if (spokenClean.includes(w)) matchCount++; });
+    const matchRate = targetWords.length > 0 ? matchCount / targetWords.length : 0;
+
+    console.log('🎤 Final:"'+finalTranscript+'" | Match:'+Math.round(matchRate*100)+'%');
+
+    micResult.style.display = 'block';
+    micResult.innerHTML = '🗣️ 인식됨: <strong>"' + finalTranscript + '"</strong>';
+
+    if (matchRate >= 0.6) {
+      confetti();
+      fillSlotsWithAnswer();
+      setTimeout(() => checkAnswer(false), 600);
+    } else {
+      micResult.innerHTML += '<br><span style="color:#e74c3c;font-size:12px;">매칭 실패 - 다시 말하거나 버튼으로 선택하세요.</span>';
+      micSubmit.style.display = 'block';
     }
   };
 
   try { rec.start(); }
   catch(e) {
-    micBtn.className='mic-btn'; micBtn.innerHTML='🎙️ 다시 말하기';
-    micResult.style.display='block';
-    micResult.innerHTML='⚠️ 마이크 시작 실패: '+e.message;
+    micBtn.className = 'mic-btn';
+    micBtn.innerHTML = '🎙️ 다시 말하기';
+    micBtn.onclick = startMic;
+    micResult.style.display = 'block';
+    micResult.innerHTML = '⚠️ 마이크 시작 실패: ' + e.message;
   }
 }
 
